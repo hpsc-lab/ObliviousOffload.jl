@@ -1,0 +1,11 @@
+name = "RemoteFHE"
+uuid = "8a0d5511-0f02-4f8e-bb88-b13043c94a6f"
+authors = ["HPSC Lab <noreply@example.com>"]
+version = "0.1.0"
+
+[deps]
+OpenFHE = "77ce9b8e-ecf5-45d1-bd8a-d31f384f2f95"
+SecureArithmetic = "38cee09b-6d7e-4d21-866e-807a7f642fe9"
+
+[compat]
+julia = "1.10"
