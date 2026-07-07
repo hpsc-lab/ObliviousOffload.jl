@@ -38,11 +38,11 @@ The handshake automatically creates all necessary files, see [](#initial-setup).
 
 1. [Server] Clone the project
 ```sh
-git@github.com:hpsc-lab/ObliviousOffload.jl.git
+git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
 ```
 2. [Client] Clone the project
 ```sh
-git@github.com:hpsc-lab/ObliviousOffload.jl.git
+git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
 ```
 3. [Server] Start the server:
 ```sh
