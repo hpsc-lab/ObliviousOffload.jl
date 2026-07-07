@@ -1,3 +1,4 @@
 Manifest.toml
 *.log
 certs/*
+LocalPreferences.toml
