@@ -2,13 +2,7 @@ using RemoteFHE
 using SecureArithmetic
 using OpenFHE
 
-host = if get(ENV, "REMOTEFHE_CLIENT_SSL", "false") !== "false"
-    "https://127.0.0.1:8080"
-else
-    "http://127.0.0.1:8080"
-end
-
-
+host = "https://127.0.0.1:8080"
 
 ################################################################################
 println("="^80)

@@ -10,6 +10,4 @@ RemoteFHE.run_server(
     ;
     username=get(ENV, "REMOTEFHE_USERNAME", nothing),
     password=get(ENV, "REMOTEFHE_PASSWORD", nothing),
-    cert_file=get(ENV, "REMOTEFHE_CERT_FILE", nothing),
-    key_file=get(ENV, "REMOTEFHE_KEY_FILE", nothing),
 )

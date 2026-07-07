@@ -1,0 +1,117 @@
+module secure_transport
+
+using HTTP
+using OpenSSL_CLI_jll
+
+const CERT_DIR = Ref(joinpath(pwd(), "certs"))
+
+
+function cert_path(name)
+    joinpath(CERT_DIR[], name)
+end
+
+const ca_cert = cert_path("ca.pem")
+const ca_key = cert_path("ca-key.pem")
+const server_key = cert_path("key.pem")
+const csr = cert_path("server.csr")
+const server_cert = cert_path("cert.pem")
+const extfile = cert_path("san.cnf")
+
+const remote_ca_cert = cert_path("remote-ca.pem")
+
+function is_valid_cert(cert; ca=nothing)
+    isfile(cert) || return false
+    if !isnothing(ca)
+        success(`$(OpenSSL_CLI_jll.openssl()) verify -CAfile $ca $cert`) || return false
+    end
+    success(`$(OpenSSL_CLI_jll.openssl()) x509 -in $cert -checkend 86400 -noout`) || return false
+    return true
+end
+
+function generate_ca()
+    mkpath(CERT_DIR[])
+    run(`$(OpenSSL_CLI_jll.openssl()) req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
+         -keyout $ca_key -out $ca_cert -days 3650 -nodes
+         -subj "/CN=ObliviousOffload Dev CA"`)
+end
+
+function generate_server_cert()
+    mkpath(CERT_DIR[])
+
+    run(`$(OpenSSL_CLI_jll.openssl()) req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
+         -keyout $server_key -out $csr -nodes
+         -subj /CN=localhost`)
+
+    write(extfile, "subjectAltName=DNS:localhost,IP:127.0.0.1")
+    run(`$(OpenSSL_CLI_jll.openssl()) x509 -req -in $csr -CA $ca_cert -CAkey $ca_key
+         -CAcreateserial -out $server_cert -days 365
+         -extfile $extfile`)
+
+    rm(csr, force=true)
+    rm(extfile, force=true)
+end
+
+function fingerprint(cert)
+    chomp(read(`$(OpenSSL_CLI_jll.openssl()) x509 -in $cert -fingerprint -sha256 -noout`, String))
+end
+
+ca_fingerprint() = fingerprint(ca_cert)
+
+
+function fetch_ca(url)
+    # We dont have the CA.pem yet, so we cannot verify the ssl certificate (we must set require_ssl_verification=false)
+    # To solve this problem of trust, we print the CA.pem fingerprint on both the server and the client
+    # The user setting up the client must initially manually trust the CA.pem by verifying its fingerprint 
+    response = HTTP.get("$url/handshake"; require_ssl_verification=false) 
+
+    content_type = HTTP.header(response, "Content-Type")
+    content_type == "application/x-pem-file" ||
+        error("expected application/x-pem-file, got $content_type")
+
+    # Write to a temp file first so we can fingerprint it before the user accepts
+    pem = tempname()
+    write(pem, response.body)
+    fp = try
+        fingerprint(pem)
+    catch
+        rm(pem, force=true)
+        error("response body is not a valid PEM certificate")
+    end
+
+    println("Received CA certificate from $url")
+    println(fp)
+    print("Trust this certificate? [y/N] ")
+    answer = readline()
+    if lowercase(strip(answer)) in ("y", "yes")
+        mkpath(CERT_DIR[])
+        mv(pem, remote_ca_cert, force=true)
+        @info "CA certificate saved" path = remote_ca_cert
+        return remote_ca_cert
+    else
+        rm(pem, force=true)
+        @warn("certificate rejected by user")
+    end
+end
+
+
+function ensure_ca()
+    if !is_valid_cert(ca_cert)
+        generate_ca()
+    end
+end
+
+
+function ensure_server()
+    ensure_ca()
+    if !is_valid_cert(server_cert; ca=ca_cert)
+        generate_server_cert()
+    end
+end
+
+function handshake(req)
+    ensure_server()
+    @info "CA certificate fingerprint: $(ca_fingerprint())"
+    return HTTP.Response(200, ["Content-Type" => "application/x-pem-file"], read(ca_cert))
+end
+
+end # module secure_transport

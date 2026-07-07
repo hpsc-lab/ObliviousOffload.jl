@@ -6,7 +6,8 @@ using Reseau.TLS
 using Base64
 using OpenFHE
 using SecureArithmetic
-
+include("secure_transport.jl")
+using .secure_transport
 export run_server, run_client
 
 
@@ -68,9 +69,12 @@ function parse_parts(parts::Vector{HTTP.Multipart})
 end
 
 
-function basic_auth_middleware(handler, username::AbstractString, password::AbstractString)
+function basic_auth_middleware(handler, username::AbstractString, password::AbstractString; exempt_paths=("/handshake",))
     expected = base64encode("$username:$password")
-    return function(req)
+    return function(req)        
+        if HTTP.URI(req.target).path in exempt_paths
+            return handler(req)
+        end
         auth = HTTP.header(req, "Authorization", "")
         if startswith(auth, "Basic ") && SubString(auth, 7) == expected
             return handler(req)
@@ -119,8 +123,8 @@ function simple_array_operations(req)
 end
 
 function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080; 
-                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing,
-                    cert_file::Union{AbstractString,Nothing} = nothing, key_file::Union{AbstractString,Nothing} = nothing)
+                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
+    secure_transport.ensure_server()
     router = HTTP.Router()
 
     HTTP.register!(router, "POST", "/simple_array_operations") do req
@@ -130,6 +134,11 @@ function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080;
             @error "Error in /simple_array_operations handler:\n$(sprint(showerror, e, catch_backtrace()))"
             HTTP.Response(500, "Internal server error")
         end
+    end
+
+    HTTP.register!(router, "GET", "/handshake") do req
+        println("handshake")
+        secure_transport.handshake(req)
     end
 
     HTTP.register!(router, "POST", "/compute") do req
@@ -162,30 +171,19 @@ function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080;
         router
     end
 
-    use_tls = cert_file !== nothing && key_file !== nothing
-    server = if use_tls
-        tls_config = TLS.Config(; cert_file, key_file)
-        listener = TLS.listen("tcp", "$host:$port", tls_config)
-        @info "RemoteFHE server listening on $host:$port (TLS)"
-        HTTP.serve!(handler, listener)
-    else
-        @info "RemoteFHE server listening on $host:$port"
-        HTTP.serve!(handler, host, port)
-    end
+    tls_config = TLS.Config(; cert_file=secure_transport.server_cert, key_file=secure_transport.server_key)
+    listener = TLS.listen("tcp", "$host:$port", tls_config)
+    @info "RemoteFHE server listening on $host:$port (TLS)"
+    server = HTTP.serve!(handler, listener)
     wait(server)
 end
 
 function run_client(values::AbstractVector{<:Real}, host::AbstractString = "http://127.0.0.1:8080";
-                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing,
-                    ca_file::Union{AbstractString,Nothing} = nothing)
-    client = if ca_file !== nothing
-        tls_config = TLS.Config(; ca_file)
-        transport = HTTP.Transport(; tls_config)
-        HTTP.Client(; transport)
-    else
-        nothing
-    end
-
+                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
+    tls_config = TLS.Config(; ca_file=secure_transport.remote_ca_cert)
+    transport = HTTP.Transport(; tls_config)
+    client = HTTP.Client(; transport)
+ 
     (; context, public_key, private_key) = setup_context()
     ciphertext = encrypt_vector(values, public_key, context)
     println("Encrypted values: ", values)
@@ -216,13 +214,9 @@ end
 function simple_array_operations_remote(context, host::AbstractString = "http://127.0.0.1:8080";
                     username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing,
                     ca_file::Union{AbstractString,Nothing} = nothing)
-    client = if ca_file !== nothing
-        tls_config = TLS.Config(; ca_file)
-        transport = HTTP.Transport(; tls_config)
-        HTTP.Client(; transport)
-    else
-        nothing
-    end
+    tls_config = TLS.Config(; ca_file=secure_transport.remote_ca_cert)
+    transport = HTTP.Transport(; tls_config)
+    client = HTTP.Client(; transport)
 
     public_key, private_key = generate_keys(context)
     init_multiplication!(context, private_key)
