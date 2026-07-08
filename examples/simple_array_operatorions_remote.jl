@@ -2,7 +2,8 @@ using ObliviousOffload
 using SecureArithmetic
 using OpenFHE
 
-host = "https://127.0.0.1:8080"
+hostname=get(ENV, "HOSTNAME", "localhost")
+host = "https://$hostname:8080"
 
 ################################################################################
 println("="^80)

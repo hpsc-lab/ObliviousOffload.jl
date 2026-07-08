@@ -122,9 +122,9 @@ function simple_array_operations(req)
 
 end
 
-function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080; 
+function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080; hostname="localhost",
                     username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
-    secure_transport.ensure_server()
+    secure_transport.ensure_server(hostname)
     router = HTTP.Router()
 
     HTTP.register!(router, "POST", "/simple_array_operations") do req
@@ -138,7 +138,7 @@ function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080;
 
     HTTP.register!(router, "GET", "/handshake") do req
         println("handshake")
-        secure_transport.handshake(req)
+        secure_transport.handshake(req, hostname)
     end
 
     HTTP.register!(router, "POST", "/compute") do req

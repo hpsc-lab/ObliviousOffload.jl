@@ -10,4 +10,5 @@ ObliviousOffload.run_server(
     ;
     username=get(ENV, "USERNAME", nothing),
     password=get(ENV, "PASSWORD", nothing),
+    hostname=get(ENV, "HOSTNAME", "localhost"),
 )
