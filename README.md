@@ -24,8 +24,8 @@ The default is no auth and communication over plain http.
 
 | Variable | Description |
 |---|---|
-| `REMOTEFHE_USERNAME` | Basic-auth username |
-| `REMOTEFHE_PASSWORD` | Basic-auth password |
+| `USERNAME` | Basic-auth username |
+| `PASSWORD` | Basic-auth password |
 
 ### TLS setup
 
@@ -46,7 +46,7 @@ git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
 ```
 3. [Server] Start the server:
 ```sh
-export REMOTEFHE_USERNAME=user REMOTEFHE_PASSWORD=pass
+export USERNAME=user PASSWORD=pass
 julia --project=ObliviousOffload examples/server.jl
 ```
 The server automatically checks for existing CA and Server certificate and creates them if necessary
@@ -65,7 +65,7 @@ A trusted client-server connection is now established.
 Now, any client side scripts can connect to the server to offload data processing. 
 For example, run 
 ```sh
-export REMOTEFHE_USERNAME=user REMOTEFHE_PASSWORD=pass
+export USERNAME=user PASSWORD=pass
 julia --project=ObliviousOffload examples/client.jl
 ```
 

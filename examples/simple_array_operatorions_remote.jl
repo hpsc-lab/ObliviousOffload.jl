@@ -62,9 +62,8 @@ println("="^80)
 println("simple_array_operations with an OpenFHE context")
 ObliviousOffload.simple_array_operations_remote(
     context_openfhe, host;
-    username=get(ENV, "REMOTEFHE_USERNAME", nothing),
-    password=get(ENV, "REMOTEFHE_PASSWORD", nothing),
-    ca_file = get(ENV, "REMOTEFHE_CA_FILE", nothing),
+    username=get(ENV, "USERNAME", nothing),
+    password=get(ENV, "PASSWORD", nothing),
 )
 
 
@@ -73,7 +72,6 @@ println("="^80)
 println("simple_array_operations with an Unencrypted context")
 ObliviousOffload.simple_array_operations_remote(
     context_unencrypted, host;
-    username=get(ENV, "REMOTEFHE_USERNAME", nothing),
-    password=get(ENV, "REMOTEFHE_PASSWORD", nothing),
-    ca_file = get(ENV, "REMOTEFHE_CA_FILE", nothing),
+    username=get(ENV, "USERNAME", nothing),
+    password=get(ENV, "PASSWORD", nothing),
 )

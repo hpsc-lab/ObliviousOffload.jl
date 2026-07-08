@@ -8,6 +8,6 @@ global_logger(logger)
 
 ObliviousOffload.run_server(
     ;
-    username=get(ENV, "REMOTEFHE_USERNAME", nothing),
-    password=get(ENV, "REMOTEFHE_PASSWORD", nothing),
+    username=get(ENV, "USERNAME", nothing),
+    password=get(ENV, "PASSWORD", nothing),
 )

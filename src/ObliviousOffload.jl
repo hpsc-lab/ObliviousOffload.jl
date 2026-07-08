@@ -212,8 +212,7 @@ function run_client(values::AbstractVector{<:Real}, host::AbstractString = "http
 end
 
 function simple_array_operations_remote(context, host::AbstractString = "http://127.0.0.1:8080";
-                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing,
-                    ca_file::Union{AbstractString,Nothing} = nothing)
+                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
     tls_config = TLS.Config(; ca_file=secure_transport.remote_ca_cert)
     transport = HTTP.Transport(; tls_config)
     client = HTTP.Client(; transport)
