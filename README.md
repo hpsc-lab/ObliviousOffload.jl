@@ -18,14 +18,15 @@ The server does not decrypt client data; it operates on encrypted ciphertext and
 ## Usage
 
 ### Environment variables
-The example scripts can be configured with environment variables to enable basic auth and TLS. 
+The example scripts can be configured with environment variables to enable basic auth. 
 All variables are optional.  
-The default is no auth and communication over plain http.
+The default is no auth and connecting to localhost as the remote.
 
 | Variable | Description |
 |---|---|
 | `USERNAME` | Basic-auth username |
 | `PASSWORD` | Basic-auth password |
+| `HOSTNAME` | DNS name where the server is reachable | 
 
 ### TLS setup
 
