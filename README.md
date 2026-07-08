@@ -36,13 +36,26 @@ The handshake automatically creates all necessary files, see [](#initial-setup).
 
 ### Initial Setup
 
-1. [Server] Clone the project
+1. [Server] Clone the project and initialize 
 ```sh
 git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
+cd ObliviousOffload.jl
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
-2. [Client] Clone the project
+> [!NOTE]
+>  If, for development purposes, local versions of SecureArithmetic and / or OpenFHE should be used, one can add local references with
+> ```sh
+> julia --project=. -e 'using Pkg; Pkg.develop([PackageSpec(path="/abs/path/to/SecureArithmetic.jl"), PackageSpec(path="/abs/path/to/OpenFHE.jl")])'
+> ```
+> and can remove them with 
+> ```sh
+> julia --project=. -e 'using Pkg; Pkg.free(["SecureArithmetic", "OpenFHE.jl"])'
+> ```
+2. [Client] Clone the project and initialize 
 ```sh
 git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
+cd ObliviousOffload.jl
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 3. [Server] Start the server:
 ```sh
