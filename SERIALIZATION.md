@@ -165,6 +165,6 @@ The server workflow is therefore:
 | `deps/build.jl` | Compiles `openfhe_serial.cpp` against the JLL artifact headers/libs |
 | `src/serial.jl` | Julia-side wrappers: `serialize_context`, `deserialize_context`, `serialize_ciphertext`, `deserialize_ciphertext` |
 
-The `send_object` / `receive_object` functions in `RemoteFHE.jl` should then be
+The `send_object` / `receive_object` functions in `ObliviousOffload.jl` should then be
 replaced with these type-aware wrappers that use the C++ layer instead of
 `Serialization.serialize`.

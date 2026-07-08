@@ -1,4 +1,4 @@
-module RemoteFHE
+module ObliviousOffload
 
 using Serialization
 using HTTP
@@ -79,7 +79,7 @@ function basic_auth_middleware(handler, username::AbstractString, password::Abst
         if startswith(auth, "Basic ") && SubString(auth, 7) == expected
             return handler(req)
         end
-        HTTP.Response(401, ["WWW-Authenticate" => "Basic realm=\"RemoteFHE\""], "Unauthorized")
+        HTTP.Response(401, ["WWW-Authenticate" => "Basic realm=\"ObliviousOffload\""], "Unauthorized")
     end
 end
 
@@ -173,7 +173,7 @@ function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080;
 
     tls_config = TLS.Config(; cert_file=secure_transport.server_cert, key_file=secure_transport.server_key)
     listener = TLS.listen("tcp", "$host:$port", tls_config)
-    @info "RemoteFHE server listening on $host:$port (TLS)"
+    @info "ObliviousOffload server listening on $host:$port (TLS)"
     server = HTTP.serve!(handler, listener)
     wait(server)
 end
@@ -286,4 +286,4 @@ function simple_array_operations_remote(context, host::AbstractString = "http://
     GC.gc()
 end
 
-end # module RemoteFHE
+end # module ObliviousOffload

@@ -1,4 +1,4 @@
-using RemoteFHE
+using ObliviousOffload
 using SecureArithmetic
 using OpenFHE
 
@@ -60,7 +60,7 @@ context_unencrypted = SecureContext(Unencrypted())
 ################################################################################
 println("="^80)
 println("simple_array_operations with an OpenFHE context")
-RemoteFHE.simple_array_operations_remote(
+ObliviousOffload.simple_array_operations_remote(
     context_openfhe, host;
     username=get(ENV, "REMOTEFHE_USERNAME", nothing),
     password=get(ENV, "REMOTEFHE_PASSWORD", nothing),
@@ -71,7 +71,7 @@ RemoteFHE.simple_array_operations_remote(
 ################################################################################
 println("="^80)
 println("simple_array_operations with an Unencrypted context")
-RemoteFHE.simple_array_operations_remote(
+ObliviousOffload.simple_array_operations_remote(
     context_unencrypted, host;
     username=get(ENV, "REMOTEFHE_USERNAME", nothing),
     password=get(ENV, "REMOTEFHE_PASSWORD", nothing),

@@ -1,4 +1,4 @@
-using RemoteFHE
+using ObliviousOffload
 
-RemoteFHE.secure_transport.ensure_server()
-print(RemoteFHE.secure_transport.ca_fingerprint())
+ObliviousOffload.secure_transport.ensure_server()
+print(ObliviousOffload.secure_transport.ca_fingerprint())
