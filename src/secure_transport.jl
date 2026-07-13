@@ -12,10 +12,15 @@ end
 
 const ca_cert = cert_path("ca.pem")
 const ca_key = cert_path("ca-key.pem")
-const server_key = cert_path("key.pem")
-const csr = cert_path("server.csr")
-const server_cert = cert_path("cert.pem")
 const extfile = cert_path("san.cnf")
+
+const csr = cert_path("server.csr")
+# Following naming convention from LetsEncrypt / Certbot
+# https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
+# We dont have a chain / fullchain, because our private ca directly signs the csr
+const server_key = cert_path("privkey.pem")
+const server_cert = cert_path("cert.pem")
+
 
 const remote_ca_cert = cert_path("remote-ca.pem")
 
