@@ -1,28 +1,30 @@
 module secure_transport
 
 using HTTP
+import ..ObliviousOffload: load_config
 using OpenSSL_CLI_jll
+using Preferences: @load_preference
 
-const CERT_DIR = Ref(joinpath(pwd(), "certs"))
+const CERT_DIR = @load_preference("cert_dir", Ref(joinpath(pwd(), "certs")))
 
 
 function cert_path(name)
     joinpath(CERT_DIR[], name)
 end
 
-const ca_cert = cert_path("ca.pem")
-const ca_key = cert_path("ca-key.pem")
-const extfile = cert_path("san.cnf")
+const ca_cert = @load_preference("ca_cert_path", cert_path("ca.pem"))
+const ca_key = @load_preference("ca_key_path", cert_path("ca-key.pem"))
+const extfile = @load_preference("san_config_path", cert_path("san.cnf"))
 
-const csr = cert_path("server.csr")
+const csr = @load_preference("signing_request_path", cert_path("server.csr"))
 # Following naming convention from LetsEncrypt / Certbot
 # https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
 # We dont have a chain / fullchain, because our private ca directly signs the csr
-const server_key = cert_path("privkey.pem")
-const server_cert = cert_path("cert.pem")
+const server_key = @load_preference("server_privkey_path", cert_path("privkey.pem"))
+const server_cert = @load_preference("server_cert_path", cert_path("cert.pem"))
 
 
-const remote_ca_cert = cert_path("remote-ca.pem")
+const remote_ca_cert = @load_preference("trusted_ca_path", cert_path("remote-ca.pem"))
 
 # OpenSSL_CLI_jll's compiled-in OPENSSLDIR points at its build environment and usually
 # does not exist on the host, making openssl fail to load its config file. Point
@@ -49,7 +51,8 @@ function generate_ca()
          -addext keyUsage=critical,keyCertSign,cRLSign`))
 end
 
-function generate_server_cert(hostname)
+function generate_server_cert()
+    (; hostname) = load_config()
     mkpath(CERT_DIR[])
 
     run(openssl(`req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
@@ -72,11 +75,13 @@ end
 ca_fingerprint() = fingerprint(ca_cert)
 
 
-function fetch_ca(url)
+function fetch_ca()
     # We dont have the CA.pem yet, so we cannot verify the ssl certificate (we must set require_ssl_verification=false)
     # To solve this problem of trust, we print the CA.pem fingerprint on both the server and the client
     # The user setting up the client must initially manually trust the CA.pem by verifying its fingerprint 
-    response = HTTP.get("$url/handshake"; require_ssl_verification=false) 
+    (; port, hostname) = load_config()
+    host = "https://$hostname:$port"
+    response = HTTP.get("$host/handshake"; require_ssl_verification=false) 
 
     content_type = HTTP.header(response, "Content-Type")
     content_type == "application/x-pem-file" ||
@@ -92,7 +97,7 @@ function fetch_ca(url)
         error("response body is not a valid PEM certificate")
     end
 
-    println("Received CA certificate from $url")
+    println("Received CA certificate from $hostname")
     println(fp)
     mkpath(CERT_DIR[])
     mv(pem, remote_ca_cert, force=true)
@@ -108,15 +113,15 @@ function ensure_ca()
 end
 
 
-function ensure_server(hostname)
+function ensure_server()
     ensure_ca()
     if !is_valid_cert(server_cert; ca=ca_cert)
-        generate_server_cert(hostname)
+        generate_server_cert()
     end
 end
 
-function handshake(req, hostname)
-    ensure_server(hostname)
+function handshake(req)
+    ensure_server()
     @info "CA certificate fingerprint: $(ca_fingerprint())"
     println("CA certificate fingerprint: $(ca_fingerprint())")
     return HTTP.Response(200, ["Content-Type" => "application/x-pem-file"], read(ca_cert))

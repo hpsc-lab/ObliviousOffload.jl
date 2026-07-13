@@ -6,9 +6,6 @@ logger = FormatLogger("server.log"; append=false) do io, args
 end
 global_logger(logger)
 
-ObliviousOffload.run_server(
-    ;
-    username=get(ENV, "USERNAME", nothing),
-    password=get(ENV, "PASSWORD", nothing),
-    hostname=get(ENV, "HOSTNAME", "localhost"),
-)
+# Connection settings (port, hostname, username, password) are read from
+# LocalPreferences.toml, section [ObliviousOffload].
+ObliviousOffload.run_server()

@@ -6,9 +6,31 @@ using Reseau.TLS
 using Base64
 using OpenFHE
 using SecureArithmetic
+using Preferences: @load_preference
 include("secure_transport.jl")
 using .secure_transport
 export run_server, run_client
+
+"""
+    load_config() -> NamedTuple
+
+Load the connection configuration from `LocalPreferences.toml` (section
+`[ObliviousOffload]`). Recognized keys: `port`, `hostname`, `username`,
+`password`. Missing keys fall back to defaults; `username` and `password`
+default to `nothing`, which disables basic auth.
+
+`hostname` is the server's public name: it is placed in the TLS
+certificate's SAN and used by clients as the address to connect to. The
+server itself always listens on all interfaces (`0.0.0.0`).
+"""
+function load_config()
+    (
+        port = @load_preference("port", 8080),
+        hostname = @load_preference("hostname", "localhost"),
+        username = @load_preference("username", nothing),
+        password = @load_preference("password", nothing),
+    )
+end
 
 
 function setup_context(; batch_size::Integer = 8, mult_depth::Integer = 2, scaling_modulus::Integer = 50)
@@ -122,8 +144,8 @@ function simple_array_operations(req)
 
 end
 
-function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080; hostname="localhost",
-                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
+function run_server()
+    (; port, hostname, username, password) = load_config()
     secure_transport.ensure_server(hostname)
     router = HTTP.Router()
 
@@ -172,14 +194,15 @@ function run_server(host::AbstractString = "0.0.0.0", port::Integer = 8080; host
     end
 
     tls_config = TLS.Config(; cert_file=secure_transport.server_cert, key_file=secure_transport.server_key)
-    listener = TLS.listen("tcp", "$host:$port", tls_config)
-    @info "ObliviousOffload server listening on $host:$port (TLS)"
+    listener = TLS.listen("tcp", "0.0.0.0:$port", tls_config)
+    @info "ObliviousOffload server listening on 0.0.0.0:$port (TLS), certificate for $hostname"
     server = HTTP.serve!(handler, listener)
     wait(server)
 end
 
-function run_client(values::AbstractVector{<:Real}, host::AbstractString = "http://127.0.0.1:8080";
-                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
+function run_client(values::AbstractVector{<:Real})
+    (; port, hostname, username, password) = load_config()
+    host = "https://$hostname:$port"
     tls_config = TLS.Config(; ca_file=secure_transport.remote_ca_cert)
     transport = HTTP.Transport(; tls_config)
     client = HTTP.Client(; transport)
@@ -211,8 +234,9 @@ function run_client(values::AbstractVector{<:Real}, host::AbstractString = "http
     return result_plain
 end
 
-function simple_array_operations_remote(context, host::AbstractString = "http://127.0.0.1:8080";
-                    username::Union{AbstractString,Nothing} = nothing, password::Union{AbstractString,Nothing} = nothing)
+function simple_array_operations_remote(context)
+    (; port, hostname, username, password) = load_config()
+    host = "https://$hostname:$port"
     tls_config = TLS.Config(; ca_file=secure_transport.remote_ca_cert)
     transport = HTTP.Transport(; tls_config)
     client = HTTP.Client(; transport)

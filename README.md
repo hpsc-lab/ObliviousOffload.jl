@@ -17,16 +17,27 @@ The server does not decrypt client data; it operates on encrypted ciphertext and
 
 ## Usage
 
-### Environment variables
-The example scripts can be configured with environment variables to enable basic auth. 
-All variables are optional.  
+### Configuration
+The package can be configured via the `[ObliviousOffload]` section in `LocalPreferences.toml`. 
+All variables are optional with defaults for local testing.  
 The default is no auth and connecting to localhost as the remote.
 
-| Variable | Description |
-|---|---|
-| `USERNAME` | Basic-auth username |
-| `PASSWORD` | Basic-auth password |
-| `HOSTNAME` | DNS name where the server is reachable | 
+| Variable | Description | Default |
+|---|---|---|
+| port | port name where the server is reachable | 8080 |
+| hostname | DNS name where the server is reachable | localhost |
+| username | Basic-auth username | nothing |
+| password | Basic-auth password | nothing |
+||||
+|cert_dir | Directory where SSL related files are stored | <WorkingDir>/certs |
+|ca_cert_path | Path where the ca certificate is stored | certs/ca.pem |
+|ca_key_path | Path where the ca certificate key is stored | certs/ca-key.pem |
+|trusted_ca_path | Path where the trusted remote ca certificate is stored | certs/remote-ca.pem |
+|server_privkey_path | Path where the server certificate key is stored | certs/privkey.pem |
+|server_cert_path | Path where the server certificate is stored | certs/cert.pem |
+|san_config_path | Path where the config files for Subject Alternative Names is stored | certs/san.cnf |
+|signing_request_path | Path where the server certificate signing request is stored | certs/server.csr |
+
 
 ### TLS setup
 
@@ -60,7 +71,6 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 3. [Server] Start the server:
 ```sh
-export USERNAME=user PASSWORD=pass
 julia --project=ObliviousOffload examples/server.jl
 ```
 The server automatically checks for existing CA and Server certificate and creates them if necessary
@@ -79,7 +89,6 @@ A trusted client-server connection is now established.
 Now, any client side scripts can connect to the server to offload data processing. 
 For example, run 
 ```sh
-export USERNAME=user PASSWORD=pass
 julia --project=ObliviousOffload examples/client.jl
 ```
 

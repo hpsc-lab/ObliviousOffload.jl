@@ -2,8 +2,8 @@ using ObliviousOffload
 using SecureArithmetic
 using OpenFHE
 
-hostname=get(ENV, "HOSTNAME", "localhost")
-host = "https://$hostname:8080"
+# Connection settings (hostname, port, username, password) are read from
+# LocalPreferences.toml, section [ObliviousOffload].
 
 ################################################################################
 println("="^80)
@@ -61,18 +61,10 @@ context_unencrypted = SecureContext(Unencrypted())
 ################################################################################
 println("="^80)
 println("simple_array_operations with an OpenFHE context")
-ObliviousOffload.simple_array_operations_remote(
-    context_openfhe, host;
-    username=get(ENV, "USERNAME", nothing),
-    password=get(ENV, "PASSWORD", nothing),
-)
+ObliviousOffload.simple_array_operations_remote(context_openfhe)
 
 
 ################################################################################
 println("="^80)
 println("simple_array_operations with an Unencrypted context")
-ObliviousOffload.simple_array_operations_remote(
-    context_unencrypted, host;
-    username=get(ENV, "USERNAME", nothing),
-    password=get(ENV, "PASSWORD", nothing),
-)
+ObliviousOffload.simple_array_operations_remote(context_unencrypted)
