@@ -146,7 +146,7 @@ end
 
 function run_server()
     (; port, hostname, username, password) = load_config()
-    secure_transport.ensure_server(hostname)
+    secure_transport.ensure_server()
     router = HTTP.Router()
 
     HTTP.register!(router, "POST", "/simple_array_operations") do req
@@ -160,7 +160,7 @@ function run_server()
 
     HTTP.register!(router, "GET", "/handshake") do req
         println("handshake")
-        secure_transport.handshake(req, hostname)
+        secure_transport.handshake(req)
     end
 
     HTTP.register!(router, "POST", "/compute") do req
