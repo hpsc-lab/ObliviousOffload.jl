@@ -1,6 +1,7 @@
 module secure_transport
 
 using HTTP
+using Sockets: IPAddr
 import ..ObliviousOffload: load_config
 using OpenSSL_CLI_jll
 using Preferences: @load_preference
@@ -59,7 +60,14 @@ function generate_server_cert()
          -keyout $server_key -out $csr -nodes
          -subj /CN=localhost`))
 
-    write(extfile, "subjectAltName=DNS:$hostname,IP:127.0.0.1")
+    # TLS matches IP addresses only against "IP:" SAN entries
+    # and DNS names only against "DNS:" entries.
+    # We must set the entry type based on what `hostname` is.
+    # parse(IPAddr, ...) throws when hostname is not a valid IPv4/IPv6 literal,
+    # i.e. when it is a DNS name.
+    is_ip = try; parse(IPAddr, hostname); true; catch; false; end
+    host_san = is_ip ? "IP:$hostname" : "DNS:$hostname"
+    write(extfile, "subjectAltName=$host_san,IP:127.0.0.1")
     run(openssl(`x509 -req -in $csr -CA $ca_cert -CAkey $ca_key
          -CAcreateserial -out $server_cert -days 365
          -extfile $extfile`))
