@@ -89,17 +89,10 @@ function fetch_ca(url)
 
     println("Received CA certificate from $url")
     println(fp)
-    print("Trust this certificate? [y/N] ")
-    answer = readline()
-    if lowercase(strip(answer)) in ("y", "yes")
-        mkpath(CERT_DIR[])
-        mv(pem, remote_ca_cert, force=true)
-        @info "CA certificate saved" path = remote_ca_cert
-        return remote_ca_cert
-    else
-        rm(pem, force=true)
-        @warn("certificate rejected by user")
-    end
+    mkpath(CERT_DIR[])
+    mv(pem, remote_ca_cert, force=true)
+    @info "WARNING: CA certificate trusted saved. You must manually check that the fingerprint is correct." path = remote_ca_cert
+    return remote_ca_cert
 end
 
 
