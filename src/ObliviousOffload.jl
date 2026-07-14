@@ -92,10 +92,8 @@ function access_log_middleware(handler)
         t0 = time()
         response = handler(req)
         duration = time() - t0
-        peer = get(req.context, :peer, nothing)
-        ip = peer === nothing ? "-" : string(peer isa Tuple ? peer[1] : peer)
         timestamp = Dates.format(Dates.now(), "dd/u/yyyy:HH:MM:SS")
-        println("$ip - [$timestamp] \"$(req.method) $(req.target) HTTP/$(req.version)\" $(response.status) $(round(duration; digits=3))s")
+        println("[$timestamp] \"$(req.method) $(req.target) HTTP/$(req.version)\" $(response.status) $(round(duration; digits=3))s")
         return response
     end
 end
