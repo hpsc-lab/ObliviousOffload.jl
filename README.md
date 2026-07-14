@@ -76,13 +76,13 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 3. [Server] Start the server:
 ```sh
-julia --project=ObliviousOffload examples/handhsake/server.jl
+julia --project=. examples/handshake/server.jl
 ```
 The server automatically checks for existing CA and Server certificate and creates them if necessary.
 
 4. [Client] Run the handshake script 
 ```sh
-julia --project=ObliviousOffload examples/handshake/client.jl
+julia --project=. examples/handshake/client.jl
 ```
 The Handshake script connects to the server and downloads its CA.pem. 
 Since it cannot yet trust the server on that first connection, both the server and the handshake script display the CA.pem fingerprint.
@@ -93,11 +93,11 @@ A trusted client-server connection is now established.
 Now, any client side scripts can connect to the server to offload data processing. 
 For example, run 
 ```sh
-julia --project=ObliviousOffload examples/simple_array_operations/server.jl
+julia --project=. examples/simple_array_operations/server.jl
 ```
 and
 ```sh
-julia --project=ObliviousOffload examples/simple_array_operations/client.jl
+julia --project=. examples/simple_array_operations/client.jl
 ```
 
 ## Authors
