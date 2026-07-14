@@ -1,6 +1,7 @@
 module ObliviousOffload
 
 using Serialization
+using Dates
 using HTTP
 using Reseau.TLS
 using Base64
@@ -79,21 +80,37 @@ function basic_auth_middleware(handler, username::AbstractString, password::Abst
     end
 end
 
+"""
+    access_log_middleware(handler)
+
+Log each request in an nginx-like access log format:
+
+    127.0.0.1 - [14/Jul/2026:13:37:00 +0000] "POST /endpoint HTTP/1.1" 200 1234 0.042s
+"""
+function access_log_middleware(handler)
+    return function(req)
+        t0 = time()
+        response = handler(req)
+        duration = time() - t0
+        peer = get(req.context, :peer, nothing)
+        ip = peer === nothing ? "-" : string(peer isa Tuple ? peer[1] : peer)
+        timestamp = Dates.format(Dates.now(), "dd/u/yyyy:HH:MM:SS")
+        println("$ip - [$timestamp] \"$(req.method) $(req.target) HTTP/$(req.version)\" $(response.status) $(round(duration; digits=3))s")
+        return response
+    end
+end
+
 function create_server()
     (; port, hostname, username, password) = load_config()
     secure_transport.ensure_server()
     router = HTTP.Router()
-
-    HTTP.register!(router, "GET", "/handshake") do req
-        println("handshake")
-        secure_transport.handshake(req)
-    end
 
     handler = if username !== nothing && password !== nothing
         basic_auth_middleware(router, username, password)
     else
         router
     end
+    handler = access_log_middleware(handler)
 
     tls_config = TLS.Config(; cert_file=secure_transport.server_cert, key_file=secure_transport.server_key)
     listener = TLS.listen("tcp", "0.0.0.0:$port", tls_config)
@@ -108,14 +125,12 @@ function register(router, endpoint, function_handler)
             parts = HTTP.parse_multipart_form(req)
             parts === nothing && return HTTP.Response(415, "expected multipart/form-data")
             fields = parse_parts(parts)
-            @info "Deserialized fields from client" names=collect(keys(fields))
 
             # Functions registered with the server might be only registered after the server was already started
             result = Base.invokelatest(function_handler, fields["args"]...; fields["kwargs"]...)
 
             form = HTTP.Form(["result" => make_part(result)])
             body = read(form)
-            @info "Serialized result" length=length(body)
             return HTTP.Response(200, ["Content-Type" => HTTP.content_type(form)]; body)
         catch e
             @error "Error in /$endpoint handler:\n$(sprint(showerror, e, catch_backtrace()))"
