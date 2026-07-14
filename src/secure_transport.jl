@@ -82,38 +82,6 @@ end
 
 ca_fingerprint() = fingerprint(ca_cert)
 
-
-function fetch_ca()
-    # We dont have the CA.pem yet, so we cannot verify the ssl certificate (we must set require_ssl_verification=false)
-    # To solve this problem of trust, we print the CA.pem fingerprint on both the server and the client
-    # The user setting up the client must initially manually trust the CA.pem by verifying its fingerprint 
-    (; port, hostname) = load_config()
-    host = "https://$hostname:$port"
-    response = HTTP.get("$host/handshake"; require_ssl_verification=false) 
-
-    content_type = HTTP.header(response, "Content-Type")
-    content_type == "application/x-pem-file" ||
-        error("expected application/x-pem-file, got $content_type")
-
-    # Write to a temp file first so we can fingerprint it before the user accepts
-    pem = tempname()
-    write(pem, response.body)
-    fp = try
-        fingerprint(pem)
-    catch
-        rm(pem, force=true)
-        error("response body is not a valid PEM certificate")
-    end
-
-    println("Received CA certificate from $hostname")
-    println(fp)
-    mkpath(CERT_DIR[])
-    mv(pem, remote_ca_cert, force=true)
-    @info "WARNING: CA certificate trusted saved. You must manually check that the fingerprint is correct." path = remote_ca_cert
-    return remote_ca_cert
-end
-
-
 function ensure_ca()
     if !is_valid_cert(ca_cert)
         generate_ca()
@@ -126,13 +94,6 @@ function ensure_server()
     if !is_valid_cert(server_cert; ca=ca_cert)
         generate_server_cert()
     end
-end
-
-function handshake(req)
-    ensure_server()
-    @info "CA certificate fingerprint: $(ca_fingerprint())"
-    println("CA certificate fingerprint: $(ca_fingerprint())")
-    return HTTP.Response(200, ["Content-Type" => "application/x-pem-file"], read(ca_cert))
 end
 
 end # module secure_transport

@@ -7,11 +7,16 @@ A minimal Julia project demonstrating a simple OpenFHE client/server flow.
 
 ## Overview
 
-This project uses Julia's `Serialization` librariy to pass data SecureArithmetic objects between client and server.
-The server does not decrypt client data; it operates on encrypted ciphertext and returns an encrypted result.
+This project demonstrates how OpenFHE objects can be sent over HTTP using Julia's `Serialization` library 
+to pass SecureArithmetic objects between a client and server for remote secure calculation.
+The idea is that the server does not decrypt client data; it operates on encrypted ciphertext and returns encrypted results.
+But this package is agnostic as to what functions get registered as endpoints with the webserver, 
+it does not depent SecureArirhtmetic / OpenFHE objects, although that is its intended purpose.
 
-- `ObliviousOffload.je` creates an OpenFHE-backed `SecureContext`.
-- The client encrypts a vector with a public key and sends the ciphertext to the server.
+Outline:
+- A client script create an OpenFHE-backed `SecureContext`.
+- A server script registers some function as a web endpoint using `ObliviousOffload.jl` 
+- The client encrypts a data with a public key and sends the ciphertext to the server.
 - The server processes the encrypted payload and sends the encrypted result back.
 - The client decrypts the returned ciphertext with its private key.
 
@@ -43,8 +48,8 @@ The default is no auth and connecting to localhost as the remote.
 
 It is required that the server has TLS certificate signed by a CA that the client trusts.
 For development / POC, we create our own CA and sign a server certificate. 
-For this purpose, the "handshake" script and enpoints exist. 
-The handshake automatically creates all necessary files, see [](#initial-setup).
+For this purpose, the "handshake" server and client example scripts exist. 
+The handshake automatically creates all necessary files.
 
 ### Initial Setup
 
@@ -61,7 +66,7 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 > ```
 > and can remove them with 
 > ```sh
-> julia --project=. -e 'using Pkg; Pkg.free(["SecureArithmetic", "OpenFHE.jl"])'
+> julia --project=. -e 'using Pkg; Pkg.free(["SecureArithmetic", "OpenFHE"])'
 > ```
 2. [Client] Clone the project and initialize 
 ```sh
@@ -71,29 +76,29 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 3. [Server] Start the server:
 ```sh
-julia --project=ObliviousOffload examples/server.jl
+julia --project=ObliviousOffload examples/handhsake/server.jl
 ```
-The server automatically checks for existing CA and Server certificate and creates them if necessary
+The server automatically checks for existing CA and Server certificate and creates them if necessary.
 
 4. [Client] Run the handshake script 
 ```sh
-julia --project=ObliviousOffload examples/handshake.jl
+julia --project=ObliviousOffload examples/handshake/client.jl
 ```
 The Handshake script connects to the server and downloads its CA.pem. 
 Since it cannot yet trust the server on that first connection, both the server and the handshake script display the CA.pem fingerprint.
-The server logs the Fingerprint in `server.log`.
-The user running the handshake script **must** manually verify that the fingerprints match and then accept the CA.pem by typing "y".
+The user running the handshake script **must** manually verify that the fingerprints match.
 
 5. [Client] Run any client scripts
 A trusted client-server connection is now established. 
 Now, any client side scripts can connect to the server to offload data processing. 
 For example, run 
 ```sh
-julia --project=ObliviousOffload examples/client.jl
+julia --project=ObliviousOffload examples/simple_array_operations/server.jl
 ```
-
-## Notes
-
+and
+```sh
+julia --project=ObliviousOffload examples/simple_array_operations/client.jl
+```
 
 ## Authors
 ObliviousOffload.jl was initiated by [Tom Finke](https://github.com/Tom-Finke/) while working for Michael Schlottke-Lakemper at the HPSC Lab of the University of Augsburg, Germany (https://hpsc.math.uni-augsburg.de).

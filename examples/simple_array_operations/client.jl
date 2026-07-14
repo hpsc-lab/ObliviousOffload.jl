@@ -57,14 +57,68 @@ println()
 
 context_unencrypted = SecureContext(Unencrypted())
 
+function simple_array_operations_remote(context)
+    public_key, private_key = generate_keys(context)
+    init_multiplication!(context, private_key)
+    init_bootstrapping!(context, private_key)
+    init_rotation!(context, private_key, (3, 3, 3), (1, -1, 1), (0, 1, 0))
+ 
+    a1 = reshape(Vector(range(1, 27)), (3, 3, 3))
+    a2 = reshape(Vector(range(27, 1, step=-1)), (3, 3, 3))
+
+    pa1 = PlainArray(a1, context)
+    pa2 = PlainArray(a2, context)
+
+    println("Input array a1: ", pa1)
+    println("Input array a2: ", pa2)
+
+    sa1 = encrypt(pa1, public_key)
+    sa2 = encrypt(pa2, public_key)
+
+
+    
+    (; sa1, sa_add, sa_sub, sa_scalar, sa_mult, sa_shift1, sa_shift2, sa_after_bootstrap) = ObliviousOffload.run("simple_array_operations", sa1, sa2)
+
+    println()
+    println("Results of homomorphic computations: ")
+
+    result_sa1 = decrypt(sa1, private_key)
+    println("a1 = ", result_sa1)
+
+    result_sa_add = decrypt(sa_add, private_key)
+    println("a1 + a2 = ", result_sa_add)
+
+    result_sa_sub = decrypt(sa_sub, private_key)
+    println("a1 - a2 = ", result_sa_sub)
+
+    result_sa_scalar = decrypt(sa_scalar, private_key)
+    println("4 * a1 = ", result_sa_scalar)
+
+    result_sa_mult = decrypt(sa_mult, private_key)
+    println("a1 * a2 = ", result_sa_mult)
+
+    result_sa_shift1 = decrypt(sa_shift1, private_key)
+    println("a1 shifted circularly by (0, 1, 0) = ", result_sa_shift1)
+
+    result_sa_shift2 = decrypt(sa_shift2, private_key)
+    println("a1 shifted circularly by (1, -1, 1) = ", result_sa_shift2)
+
+    result_after_bootstrap = decrypt(sa_after_bootstrap, private_key)
+    println("a1 after bootstrapping \n\t", result_after_bootstrap)
+    
+    # Clean all `OpenFHE.CryptoContext`s and generated keys.
+    release_context_memory()
+    GC.gc()
+end
 
 ################################################################################
 println("="^80)
 println("simple_array_operations with an OpenFHE context")
-ObliviousOffload.simple_array_operations_remote(context_openfhe)
-
+simple_array_operations_remote(context_openfhe)
 
 ################################################################################
 println("="^80)
 println("simple_array_operations with an Unencrypted context")
-ObliviousOffload.simple_array_operations_remote(context_unencrypted)
+simple_array_operations_remote(context_unencrypted)
+
+
