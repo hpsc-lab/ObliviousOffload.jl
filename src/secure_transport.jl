@@ -2,7 +2,6 @@ module secure_transport
 
 using HTTP
 using Sockets: IPAddr
-import ..ObliviousOffload: load_config
 using OpenSSL_CLI_jll
 using Preferences: @load_preference
 
@@ -53,7 +52,7 @@ function generate_ca()
 end
 
 function generate_server_cert()
-    (; hostname) = load_config()
+    hostname = @load_preference("hostname", "localhost")
     mkpath(CERT_DIR[])
 
     run(openssl(`req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
