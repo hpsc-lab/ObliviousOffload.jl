@@ -6,7 +6,7 @@ import ..ObliviousOffload: load_config
 using OpenSSL_CLI_jll
 using Preferences: @load_preference
 
-const CERT_DIR = @load_preference("cert_dir", Ref(joinpath(pwd(), "certs")))
+const CERT_DIR = Ref(@load_preference("cert_dir", joinpath(pwd(), "certs")))
 
 
 function cert_path(name)

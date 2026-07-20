@@ -27,4 +27,9 @@ end
 server, router = ObliviousOffload.create_server()
 
 ObliviousOffload.register(router, "simple_array_operations", simple_array_operations)
-wait(server)
+
+# Block only when executed as a script (`julia server.jl`), not when included
+# This is required by the test suite, which starts the server in-process and closes it itself.
+if abspath(PROGRAM_FILE) == @__FILE__
+    wait(server)
+end
