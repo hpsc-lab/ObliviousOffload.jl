@@ -24,7 +24,7 @@ Preferences.set_preferences!(
     @test ~isdir(certs_dir) # fails if certs dir already exists
     
     port = 8000
-    @test isnothing(close(Sockets.listen(port))) # Test that port is available before server ist started
+    @test isnothing(close(Sockets.listen(port))) # Test that port is available before server is started
 
     include("../examples/simple_array_operations/server.jl")
     @test_throws Base.IOError Sockets.listen(port) # test that port is now occupied
