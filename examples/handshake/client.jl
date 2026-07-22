@@ -14,7 +14,7 @@ end
 
 @info "Received CA certificate, fingerprint: $fp"
 
-mkpath(ObliviousOffload.secure_transport.CERT_DIR[])
+mkpath(ObliviousOffload.secure_transport.CERT_DIR)
 mv(pem, ObliviousOffload.secure_transport.remote_ca_cert, force=true)
 
 @info "CA certificate automatically trusted and saved. You must manually check that the fingerprint is correct." path = ObliviousOffload.secure_transport.remote_ca_cert
