@@ -1,6 +1,3 @@
-> [!WARNING]
-> This project is in an early alpha state. It is not recommended to use this package in its current state.
-
 # ObliviousOffload.jl
 
 A minimal Julia project demonstrating a simple OpenFHE client/server flow.
