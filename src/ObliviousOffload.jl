@@ -9,26 +9,11 @@ using Preferences: @load_preference
 include("secure_transport.jl")
 using .secure_transport
 
-"""
-    load_config() -> NamedTuple
+const port = @load_preference("port", 8080)
+const hostname = @load_preference("hostname", "localhost")
+const username = @load_preference("username", nothing)
+const password = @load_preference("password", nothing)
 
-Load the connection configuration from `LocalPreferences.toml` (section
-`[ObliviousOffload]`). Recognized keys: `port`, `hostname`, `username`,
-`password`. Missing keys fall back to defaults; `username` and `password`
-default to `nothing`, which disables basic auth.
-
-`hostname` is the server's public name: it is placed in the TLS
-certificate's SAN and used by clients as the address to connect to. The
-server itself always listens on all interfaces (`0.0.0.0`).
-"""
-function load_config()
-    (
-        port = @load_preference("port", 8080),
-        hostname = @load_preference("hostname", "localhost"),
-        username = @load_preference("username", nothing),
-        password = @load_preference("password", nothing),
-    )
-end
 
 
 """
@@ -99,7 +84,6 @@ function access_log_middleware(handler)
 end
 
 function create_server()
-    (; port, hostname, username, password) = load_config()
     secure_transport.ensure_server()
     router = HTTP.Router()
 
@@ -138,7 +122,6 @@ function register(router, endpoint, function_handler)
 end
 
 function run(endpoint, args...; kwargs...)
-    (; port, hostname, username, password) = load_config()
     host = "https://$hostname:$port"
 
     # For the initial handshake, `require_ssl_verification=false` is required.

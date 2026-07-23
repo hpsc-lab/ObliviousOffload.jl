@@ -8,7 +8,7 @@ This project demonstrates how OpenFHE objects can be sent over HTTP using Julia'
 to pass SecureArithmetic objects between a client and server for remote secure calculation.
 The idea is that the server does not decrypt client data; it operates on encrypted ciphertext and returns encrypted results.
 But this package is agnostic as to what functions get registered as endpoints with the webserver, 
-it does not depent SecureArirhtmetic / OpenFHE objects, although that is its intended purpose.
+it does not depend on SecureArirhtmetic / OpenFHE objects, although that is its intended purpose.
 
 Outline:
 - A client script create an OpenFHE-backed `SecureContext`.

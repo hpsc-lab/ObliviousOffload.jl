@@ -5,11 +5,11 @@ using Sockets: IPAddr
 using OpenSSL_CLI_jll
 using Preferences: @load_preference
 
-const CERT_DIR = Ref(@load_preference("cert_dir", joinpath(pwd(), "certs")))
+const CERT_DIR = @load_preference("cert_dir", joinpath(pwd(), "certs"))
 
 
 function cert_path(name)
-    joinpath(CERT_DIR[], name)
+    joinpath(CERT_DIR, name)
 end
 
 const ca_cert = @load_preference("ca_cert_path", cert_path("ca.pem"))
@@ -25,6 +25,9 @@ const server_cert = @load_preference("server_cert_path", cert_path("cert.pem"))
 
 
 const remote_ca_cert = @load_preference("trusted_ca_path", cert_path("remote-ca.pem"))
+
+
+const hostname = @load_preference("hostname", "localhost")
 
 # OpenSSL_CLI_jll's compiled-in OPENSSLDIR points at its build environment and usually
 # does not exist on the host, making openssl fail to load its config file. Point
@@ -43,7 +46,7 @@ function is_valid_cert(cert; ca=nothing)
 end
 
 function generate_ca()
-    mkpath(CERT_DIR[])
+    mkpath(CERT_DIR)
     run(openssl(`req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
          -keyout $ca_key -out $ca_cert -days 3650 -nodes
          -subj "/CN=ObliviousOffload Dev CA"
@@ -52,8 +55,7 @@ function generate_ca()
 end
 
 function generate_server_cert()
-    hostname = @load_preference("hostname", "localhost")
-    mkpath(CERT_DIR[])
+    mkpath(CERT_DIR)
 
     run(openssl(`req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
          -keyout $server_key -out $csr -nodes
