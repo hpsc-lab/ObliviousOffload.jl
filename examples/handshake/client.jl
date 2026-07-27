@@ -1,7 +1,7 @@
 using ObliviousOffload
-ca_binary = task_local_storage(:insecure_tls, true) do
-    ObliviousOffload.run("handshake")
-end
+
+conn = ObliviousOffload.ConnectParams(;insecure_tls=true)
+ca_binary = ObliviousOffload.run(conn, "handshake")
 
 pem = tempname()
 write(pem, ca_binary)
@@ -14,7 +14,7 @@ end
 
 @info "Received CA certificate, fingerprint: $fp"
 
-mkpath(ObliviousOffload.secure_transport.CERT_DIR[])
-mv(pem, ObliviousOffload.secure_transport.remote_ca_cert, force=true)
+mkpath(conn.cert_dir)
+mv(pem, conn.trusted_ca_path, force=true)
 
-@info "CA certificate automatically trusted and saved. You must manually check that the fingerprint is correct." path = ObliviousOffload.secure_transport.remote_ca_cert
+@info "CA certificate automatically trusted and saved. You must manually check that the fingerprint is correct." path = conn.trusted_ca_path

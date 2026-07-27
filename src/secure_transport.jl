@@ -3,28 +3,7 @@ module secure_transport
 using HTTP
 using Sockets: IPAddr
 using OpenSSL_CLI_jll
-using Preferences: @load_preference
-
-const CERT_DIR = Ref(@load_preference("cert_dir", joinpath(pwd(), "certs")))
-
-
-function cert_path(name)
-    joinpath(CERT_DIR[], name)
-end
-
-const ca_cert = @load_preference("ca_cert_path", cert_path("ca.pem"))
-const ca_key = @load_preference("ca_key_path", cert_path("ca-key.pem"))
-const extfile = @load_preference("san_config_path", cert_path("san.cnf"))
-
-const csr = @load_preference("signing_request_path", cert_path("server.csr"))
-# Following naming convention from LetsEncrypt / Certbot
-# https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
-# We don't have a chain / fullchain, because our private ca directly signs the csr
-const server_key = @load_preference("server_privkey_path", cert_path("privkey.pem"))
-const server_cert = @load_preference("server_cert_path", cert_path("cert.pem"))
-
-
-const remote_ca_cert = @load_preference("trusted_ca_path", cert_path("remote-ca.pem"))
+using ..ObliviousOffload: ConnectParams
 
 # OpenSSL_CLI_jll's compiled-in OPENSSLDIR points at its build environment and usually
 # does not exist on the host, making openssl fail to load its config file. Point
@@ -42,21 +21,20 @@ function is_valid_cert(cert; ca=nothing)
     return true
 end
 
-function generate_ca()
-    mkpath(CERT_DIR[])
+function generate_ca(conn::ConnectParams)
+    mkpath(conn.cert_dir)
     run(openssl(`req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
-         -keyout $ca_key -out $ca_cert -days 3650 -nodes
+         -keyout $(conn.ca_key_path) -out $(conn.ca_cert_path) -days 3650 -nodes
          -subj "/CN=ObliviousOffload Dev CA"
          -addext basicConstraints=critical,CA:TRUE
          -addext keyUsage=critical,keyCertSign,cRLSign`))
 end
 
-function generate_server_cert()
-    hostname = @load_preference("hostname", "localhost")
-    mkpath(CERT_DIR[])
+function generate_server_cert(conn::ConnectParams)
+    mkpath(conn.cert_dir)
 
     run(openssl(`req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
-         -keyout $server_key -out $csr -nodes
+         -keyout $(conn.server_privkey_path) -out $(conn.signing_request_path) -nodes
          -subj /CN=localhost`))
 
     # TLS matches IP addresses only against "IP:" SAN entries
@@ -64,34 +42,35 @@ function generate_server_cert()
     # We must set the entry type based on what `hostname` is.
     # parse(IPAddr, ...) throws when hostname is not a valid IPv4/IPv6 literal,
     # i.e. when it is a DNS name.
-    is_ip = try; parse(IPAddr, hostname); true; catch; false; end
-    host_san = is_ip ? "IP:$hostname" : "DNS:$hostname"
-    write(extfile, "subjectAltName=$host_san,IP:127.0.0.1")
-    run(openssl(`x509 -req -in $csr -CA $ca_cert -CAkey $ca_key
-         -CAcreateserial -out $server_cert -days 365
-         -extfile $extfile`))
+    is_ip = try; parse(IPAddr, conn.hostname); true; catch; false; end
+    host_san = is_ip ? "IP:$(conn.hostname)" : "DNS:$(conn.hostname)"
+    write(conn.san_config_path, "subjectAltName=$host_san,IP:127.0.0.1")
+    run(openssl(`x509 -req -in $(conn.signing_request_path) -CA $(conn.ca_cert_path) -CAkey $(conn.ca_key_path)
+         -CAcreateserial -out $(conn.server_cert_path) -days 365
+         -extfile $(conn.san_config_path)`))
 
-    rm(csr, force=true)
-    rm(extfile, force=true)
+    rm(conn.signing_request_path, force=true)
+    rm(conn.san_config_path, force=true)
 end
 
 function fingerprint(cert)
     chomp(read(openssl(`x509 -in $cert -fingerprint -sha256 -noout`), String))
 end
 
-ca_fingerprint() = fingerprint(ca_cert)
+ca_fingerprint() = fingerprint(ConnectParams().ca_cert_path)
+ca_fingerprint(conn::ConnectParams) = fingerprint(conn.ca_cert_path)
 
-function ensure_ca()
-    if !is_valid_cert(ca_cert)
-        generate_ca()
+function ensure_ca(conn::ConnectParams)
+    if !is_valid_cert(conn.ca_cert_path)
+        generate_ca(conn)
     end
 end
 
 
-function ensure_server()
-    ensure_ca()
-    if !is_valid_cert(server_cert; ca=ca_cert)
-        generate_server_cert()
+function ensure_server(conn::ConnectParams)
+    ensure_ca(conn::ConnectParams)
+    if !is_valid_cert(conn.server_cert_path; ca=conn.ca_cert_path)
+        generate_server_cert(conn::ConnectParams)
     end
 end
 

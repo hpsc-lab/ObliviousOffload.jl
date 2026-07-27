@@ -4,9 +4,8 @@ using ObliviousOffload
 server = ObliviousOffload.OffloadServer()
 
 function handshake()
-    ObliviousOffload.secure_transport.ensure_server()
     println("CA certificate fingerprint: $(ObliviousOffload.secure_transport.ca_fingerprint())")
-    return read(ObliviousOffload.secure_transport.ca_cert)
+    return read(ObliviousOffload.ConnectParams().ca_cert_path)
 end
 
 ObliviousOffload.register!(server, "handshake", handshake)

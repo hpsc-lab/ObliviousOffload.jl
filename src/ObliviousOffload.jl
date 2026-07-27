@@ -6,30 +6,73 @@ using HTTP
 using Reseau.TLS
 using Base64
 using Preferences: @load_preference
-include("secure_transport.jl")
-using .secure_transport
+# include("types.jl")
+# using .types: ConnectParams, OffloadServer
 
-"""
-    load_config() -> NamedTuple
+struct ConnectParams
+    port::Int
+    hostname::String
+    username
+    password
+    cert_dir::String
+    ca_cert_path::String
+    ca_key_path::String
+    trusted_ca_path::String
+    server_privkey_path::String
+    server_cert_path::String
+    san_config_path::String
+    signing_request_path::String
+    insecure_tls::Bool
+    # Computed properties
+    host::String
+    basicauth
 
-Load the connection configuration from `LocalPreferences.toml` (section
-`[ObliviousOffload]`). Recognized keys: `port`, `hostname`, `username`,
-`password`. Missing keys fall back to defaults; `username` and `password`
-default to `nothing`, which disables basic auth.
-
-`hostname` is the server's public name: it is placed in the TLS
-certificate's SAN and used by clients as the address to connect to. The
-server itself always listens on all interfaces (`0.0.0.0`).
-"""
-function load_config()
-    (
+    function ConnectParams(;
         port = @load_preference("port", 8080),
         hostname = @load_preference("hostname", "localhost"),
         username = @load_preference("username", nothing),
         password = @load_preference("password", nothing),
+        cert_dir = @load_preference("cert_dir", "certs/"),
+        ca_cert_path = @load_preference("ca_cert_path", joinpath(cert_dir, "ca.pem")),
+        ca_key_path = @load_preference("ca_key_path", joinpath(cert_dir, "ca-key.pem")),
+        trusted_ca_path = @load_preference("trusted_ca_path", joinpath(cert_dir, "remote-ca.pem")),
+        # Following naming convention from LetsEncrypt / Certbot
+        # https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
+        # We don't have a chain / fullchain, because our private ca directly signs the csr
+        server_privkey_path = @load_preference("server_privkey_path", joinpath(cert_dir, "privkey.pem")),
+        server_cert_path = @load_preference("server_cert_path", joinpath(cert_dir, "cert.pem")),
+        san_config_path = @load_preference("san_config_path", joinpath(cert_dir, "san.cnf")),
+        signing_request_path = @load_preference("signing_request_path", joinpath(cert_dir, "server.csr")),
+        insecure_tls = false,
     )
+        host = "https://$hostname:$port"
+        basicauth = if username !== nothing && password !== nothing
+            (username, password)
+        else
+            nothing
+        end
+        new(
+            port,
+            hostname,
+            username,
+            password,
+            cert_dir,
+            ca_cert_path,
+            ca_key_path,
+            trusted_ca_path,
+            server_privkey_path,
+            server_cert_path,
+            san_config_path,
+            signing_request_path,
+            insecure_tls,
+            host,
+            basicauth,
+        )
+    end
 end
 
+include("secure_transport.jl")
+using .secure_transport
 
 """
     make_part(obj) -> HTTP.Multipart
@@ -103,23 +146,25 @@ struct OffloadServer
     router::HTTP.Handlers.Router
 end
 
-OffloadServer() = create_server()
 
-function create_server()
-    (; port, hostname, username, password) = load_config()
-    secure_transport.ensure_server()
+
+OffloadServer(conn::ConnectParams) = create_server(conn)
+OffloadServer() = create_server(ConnectParams())
+
+function create_server(conn::ConnectParams)
+    secure_transport.ensure_server(conn)
     router = HTTP.Router()
 
-    handler = if username !== nothing && password !== nothing
-        basic_auth_middleware(router, username, password)
+    handler = if conn.username !== nothing && conn.password !== nothing
+        basic_auth_middleware(router, conn.username, conn.password)
     else
         router
     end
     handler = access_log_middleware(handler)
 
-    tls_config = TLS.Config(; cert_file=secure_transport.server_cert, key_file=secure_transport.server_key)
-    listener = TLS.listen("tcp", "0.0.0.0:$port", tls_config)
-    @info "ObliviousOffload server listening on 0.0.0.0:$port (TLS), certificate for '$hostname'"
+    tls_config = TLS.Config(; cert_file=conn.server_cert_path, key_file=conn.server_privkey_path)
+    listener = TLS.listen("tcp", "0.0.0.0:$(conn.port)", tls_config)
+    @info "ObliviousOffload server listening on 0.0.0.0:$(conn.port) (TLS), certificate for '$(conn.hostname)'"
     server = HTTP.serve!(handler, listener)
     return OffloadServer(server, router)
 end
@@ -153,18 +198,13 @@ function register!(server::OffloadServer, endpoint, function_handler)
     end
 end
 
-function run(endpoint, args...; kwargs...)
-    (; port, hostname, username, password) = load_config()
-    host = "https://$hostname:$port"
-
+function run(conn::ConnectParams, endpoint::String, args...; kwargs...)
     # For the initial handshake, `require_ssl_verification=false` is required.
-    # We don't pass it as a regular argument, because it could potentially interfere with the arguments of the function being called
-    insecure_tls = get(task_local_storage(), :insecure_tls, false)
-    if insecure_tls
+    if conn.insecure_tls
         # When require_ssl_verification=false, no custom client can be passed to HTTP.post
         client = nothing
     else
-        tls_config = TLS.Config(; ca_file=secure_transport.remote_ca_cert)
+        tls_config = TLS.Config(; ca_file=conn.trusted_ca_path)
         transport = HTTP.Transport(; tls_config)
         client = HTTP.Client(; transport)
     end
@@ -173,13 +213,9 @@ function run(endpoint, args...; kwargs...)
         "args" => make_part(args),
         "kwargs" => make_part(kwargs),
     ])
-    basicauth = if username !== nothing && password !== nothing
-        (username, password)
-    else
-        nothing
-    end
-    response = HTTP.post("$host/$endpoint", ["Content-Type" => HTTP.content_type(form)], form;
-                         basicauth, client, require_ssl_verification=!insecure_tls)
+    
+    response = HTTP.post("$(conn.host)/$endpoint", ["Content-Type" => HTTP.content_type(form)], form;
+                         conn.basicauth, client, require_ssl_verification=!conn.insecure_tls)
 
     ct = HTTP.header(response, "Content-Type")
     resp_parts = HTTP.parse_multipart_form(ct, response.body)
@@ -188,5 +224,7 @@ function run(endpoint, args...; kwargs...)
 
     return result
 end
+
+run(endpoint::String, args...; kwargs...) = run(ConnectParams(), endpoint, args...; kwargs...) 
 
 end # module ObliviousOffload
