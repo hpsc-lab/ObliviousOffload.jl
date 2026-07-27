@@ -10,7 +10,7 @@ using Preferences: @load_preference
 # using .types: ConnectParams, OffloadServer
 
 struct ConnectParams
-    port::Int
+    port::Union{Int, String}
     hostname::String
     username
     password
