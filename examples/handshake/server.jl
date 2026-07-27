@@ -1,7 +1,7 @@
 using ObliviousOffload
 
 
-server, router = ObliviousOffload.create_server()
+server = ObliviousOffload.OffloadServer()
 
 function handshake()
     ObliviousOffload.secure_transport.ensure_server()
@@ -9,7 +9,7 @@ function handshake()
     return read(ObliviousOffload.secure_transport.ca_cert)
 end
 
-ObliviousOffload.register(router, "handshake", handshake)
+ObliviousOffload.register!(server, "handshake", handshake)
 
 # Block only when executed as a script (`julia server.jl`), not when included
 # This is required by the test suite, which starts the server in-process and closes it itself.

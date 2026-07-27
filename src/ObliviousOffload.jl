@@ -98,6 +98,13 @@ function access_log_middleware(handler)
     end
 end
 
+struct OffloadServer
+    server::HTTP.Server
+    router::HTTP.Handlers.Router
+end
+
+OffloadServer() = create_server()
+
 function create_server()
     (; port, hostname, username, password) = load_config()
     secure_transport.ensure_server()
@@ -114,11 +121,20 @@ function create_server()
     listener = TLS.listen("tcp", "0.0.0.0:$port", tls_config)
     @info "ObliviousOffload server listening on 0.0.0.0:$port (TLS), certificate for '$hostname'"
     server = HTTP.serve!(handler, listener)
-    return server, router
+    return OffloadServer(server, router)
 end
 
-function register(router, endpoint, function_handler)
-    HTTP.register!(router, "POST", "/$endpoint") do req
+function Base.:wait(server::OffloadServer)
+    wait(server.server)
+end
+
+function Base.:close(server::OffloadServer)
+    close(server.server)
+end
+
+
+function register!(server::OffloadServer, endpoint, function_handler)
+    HTTP.register!(server.router, "POST", "/$endpoint") do req
         try
             parts = HTTP.parse_multipart_form(req)
             parts === nothing && return HTTP.Response(415, "expected multipart/form-data")

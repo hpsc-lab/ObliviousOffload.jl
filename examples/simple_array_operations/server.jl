@@ -24,9 +24,9 @@ end
 
 # Connection settings (port, hostname, username, password) are read from
 # LocalPreferences.toml, section [ObliviousOffload].
-server, router = ObliviousOffload.create_server()
+server = ObliviousOffload.OffloadServer()
 
-ObliviousOffload.register(router, "simple_array_operations", simple_array_operations)
+ObliviousOffload.register!(server, "simple_array_operations", simple_array_operations)
 
 # Block only when executed as a script (`julia server.jl`), not when included
 # This is required by the test suite, which starts the server in-process and closes it itself.
