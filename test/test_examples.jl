@@ -1,30 +1,60 @@
 module TestExamples
 
 using Test
-using Preferences
+using ObliviousOffload
 
+# Using scratch for cert dir during testing
+# See https://pkgdocs.julialang.org/v1/creating-packages/#Warning-20f4412fd0c496ad
+using Scratch: get_scratch!, delete_scratch!, clear_scratchspaces!
 
 @testset verbose=true showtiming=true "test_examples.jl" begin
+clear_scratchspaces!(ObliviousOffload) 
+@testset verbose=true showtiming=true "examples/handshake" begin
+    certs_dir = get_scratch!(ObliviousOffload, "examples_handshake_dir")
+    @test isempty(readdir(certs_dir))
 
-@testset verbose=true showtiming=true "examples/simple_array_operations" begin
-    rm("test_certs"; force=true, recursive=true)
-    Preferences.set_preferences!(
-        "ObliviousOffload", 
-        (
-            "port" => "8000", 
-            "hostname" => "localhost",
-            "username" => "test",
-            "password" => "test",
-            "cert_dir" => "test_certs",
-            "trusted_ca_path" => "test_certs/ca.pem", # set locally generated ca.pem as trusted ca, so that no handshake is necessary. Testing handshake separately  
-        )...
-        ; force=true
+    conn = (
+            cert_dir = "$certs_dir",
+            trusted_ca_path = "$certs_dir/trusted_ca.pem", # set locally generated ca.pem as trusted ca, so that no handshake is necessary. Testing handshake separately
     )
 
-    include("../examples/simple_array_operations/server.jl")
-    include("../examples/simple_array_operations/client.jl")
-    rm("test_certs"; recursive=true)
+    include("../examples/handshake/server.jl")
+    server = run_server(;conn...)
+
+    include("../examples/handshake/client.jl")
+    run_client(;conn...)
+
+    close(server)
+
+    @test isfile("$certs_dir/ca-key.pem")
+    @test isfile("$certs_dir/ca.pem")
+    @test isfile("$certs_dir/ca.srl")
+    @test isfile("$certs_dir/privkey.pem")
+    @test isfile("$certs_dir/cert.pem")
+    @test isfile("$certs_dir/trusted_ca.pem")
+    delete_scratch!(ObliviousOffload, "examples_handshake_dir")
 end
+
+@testset verbose=true showtiming=true "examples/simple_array_operations" begin
+    certs_dir = get_scratch!(ObliviousOffload, "examples_simple_array_operations_certs_dir")
+    @test isempty(readdir(certs_dir))
+    conn = (
+            username = "test",
+            password = "test",
+            cert_dir = "$certs_dir",
+            trusted_ca_path = "$certs_dir/ca.pem", # set locally generated ca.pem as trusted ca, so that no handshake is necessary. Testing handshake separately
+    )
+    include("../examples/simple_array_operations/server.jl")
+    server = run_server(;conn...)
+    include("../examples/simple_array_operations/client.jl")
+    run_client(;conn...)
+
+    close(server)
+
+    delete_scratch!(ObliviousOffload, "examples_simple_array_operations_certs_dir")
+end
+
+
 
 end # @testset "test_examples.jl"
 

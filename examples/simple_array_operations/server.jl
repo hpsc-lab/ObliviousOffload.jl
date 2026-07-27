@@ -21,15 +21,22 @@ function simple_array_operations(sa1, sa2)
 
 end
 
+function run_server(; kwargs...)
+    # Connection settings (port, hostname, username, password) are read from
+    # LocalPreferences.toml, section [ObliviousOffload].
+    conn = ObliviousOffload.ConnectParams(; kwargs...)
+    server = ObliviousOffload.OffloadServer(conn)
 
-# Connection settings (port, hostname, username, password) are read from
-# LocalPreferences.toml, section [ObliviousOffload].
-server = ObliviousOffload.OffloadServer()
+    ObliviousOffload.register!(server, "simple_array_operations", simple_array_operations)
+    return server
+end
 
-ObliviousOffload.register!(server, "simple_array_operations", simple_array_operations)
 
 # Block only when executed as a script (`julia server.jl`), not when included
 # This is required by the test suite, which starts the server in-process and closes it itself.
 if abspath(PROGRAM_FILE) == @__FILE__
+    include("../parse_args.jl")
+    kwargs = parse_commandline()
+    server = run_server(;kwargs...)
     wait(server)
 end

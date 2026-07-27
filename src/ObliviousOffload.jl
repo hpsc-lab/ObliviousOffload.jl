@@ -46,6 +46,14 @@ struct ConnectParams
         insecure_tls = false,
     )
         host = "https://$hostname:$port"
+
+        # Reset auth credentials when using insecure TLS (e.g., during handshake)
+        if insecure_tls && (username !== nothing || password !== nothing)
+            @warn "Authentication cannot be used with insecure TLS. Username and password have been reset to nothing."
+            username = nothing
+            password = nothing
+        end
+
         basicauth = if username !== nothing && password !== nothing
             (username, password)
         else
@@ -109,12 +117,9 @@ function parse_parts(parts::Vector{HTTP.Multipart})
 end
 
 
-function basic_auth_middleware(handler, username::AbstractString, password::AbstractString; exempt_paths=("/handshake",))
+function basic_auth_middleware(handler, username::AbstractString, password::AbstractString)
     expected = base64encode("$username:$password")
-    return function(req)        
-        if HTTP.URI(req.target).path in exempt_paths
-            return handler(req)
-        end
+    return function(req)
         auth = HTTP.header(req, "Authorization", "")
         if startswith(auth, "Basic ") && SubString(auth, 7) == expected
             return handler(req)

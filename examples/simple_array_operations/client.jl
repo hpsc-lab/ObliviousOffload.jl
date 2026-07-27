@@ -57,7 +57,7 @@ println()
 
 context_unencrypted = SecureContext(Unencrypted())
 
-function simple_array_operations_remote(context)
+function simple_array_operations_remote(conn::ObliviousOffload.ConnectParams, context)
     public_key, private_key = generate_keys(context)
     init_multiplication!(context, private_key)
     init_bootstrapping!(context, private_key)
@@ -77,7 +77,7 @@ function simple_array_operations_remote(context)
 
 
     
-    (; sa1, sa_add, sa_sub, sa_scalar, sa_mult, sa_shift1, sa_shift2, sa_after_bootstrap) = ObliviousOffload.run("simple_array_operations", sa1, sa2)
+    (; sa1, sa_add, sa_sub, sa_scalar, sa_mult, sa_shift1, sa_shift2, sa_after_bootstrap) = ObliviousOffload.run(conn, "simple_array_operations", sa1, sa2)
 
     println()
     println("Results of homomorphic computations: ")
@@ -111,14 +111,23 @@ function simple_array_operations_remote(context)
     GC.gc()
 end
 
-################################################################################
-println("="^80)
-println("simple_array_operations with an OpenFHE context")
-simple_array_operations_remote(context_openfhe)
 
-################################################################################
-println("="^80)
-println("simple_array_operations with an Unencrypted context")
-simple_array_operations_remote(context_unencrypted)
+function run_client(; kwargs...)
+    conn = ObliviousOffload.ConnectParams(; kwargs...)
+    ################################################################################
+    println("="^80)
+    println("simple_array_operations with an OpenFHE context")
+    simple_array_operations_remote(conn, context_openfhe)
+
+    ################################################################################
+    println("="^80)
+    println("simple_array_operations with an Unencrypted context")
+    simple_array_operations_remote(conn, context_unencrypted)
+end
 
 
+if abspath(PROGRAM_FILE) == @__FILE__
+    include("../parse_args.jl")
+    kwargs = parse_commandline()
+    run_client(;kwargs...)
+end
