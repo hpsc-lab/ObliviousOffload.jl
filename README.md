@@ -8,12 +8,12 @@ This project demonstrates how OpenFHE objects can be sent over HTTP using Julia'
 to pass SecureArithmetic objects between a client and server for remote secure calculation.
 The idea is that the server does not decrypt client data; it operates on encrypted ciphertext and returns encrypted results.
 But this package is agnostic as to what functions get registered as endpoints with the webserver, 
-it does not depent SecureArirhtmetic / OpenFHE objects, although that is its intended purpose.
+it does not depend on SecureArithmetic / OpenFHE objects, although that is its intended purpose.
 
 Outline:
-- A client script create an OpenFHE-backed `SecureContext`.
+- A client script creates an OpenFHE-backed `SecureContext`.
 - A server script registers some function as a web endpoint using `ObliviousOffload.jl` 
-- The client encrypts a data with a public key and sends the ciphertext to the server.
+- The client encrypts data with a public key and sends the ciphertext to the server.
 - The server processes the encrypted payload and sends the encrypted result back.
 - The client decrypts the returned ciphertext with its private key.
 
@@ -26,7 +26,7 @@ The default is no auth and connecting to localhost as the remote.
 
 | Variable | Description | Default |
 |---|---|---|
-| port | port name where the server is reachable | 8080 |
+| port | Port where the server is reachable | 8080 |
 | hostname | DNS name where the server is reachable | localhost |
 | username | Basic-auth username | nothing |
 | password | Basic-auth password | nothing |
@@ -37,13 +37,13 @@ The default is no auth and connecting to localhost as the remote.
 |trusted_ca_path | Path where the trusted remote ca certificate is stored | certs/remote-ca.pem |
 |server_privkey_path | Path where the server certificate key is stored | certs/privkey.pem |
 |server_cert_path | Path where the server certificate is stored | certs/cert.pem |
-|san_config_path | Path where the config files for Subject Alternative Names is stored | certs/san.cnf |
+|san_config_path | Path where the config file for Subject Alternative Names is stored | certs/san.cnf |
 |signing_request_path | Path where the server certificate signing request is stored | certs/server.csr |
 
 
 ### TLS setup
 
-It is required that the server has TLS certificate signed by a CA that the client trusts.
+It is required that the server has a TLS certificate signed by a CA that the client trusts.
 For development / POC, we create our own CA and sign a server certificate. 
 For this purpose, the "handshake" server and client example scripts exist. 
 The handshake automatically creates all necessary files.

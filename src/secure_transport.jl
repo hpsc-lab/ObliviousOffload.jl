@@ -19,7 +19,7 @@ const extfile = @load_preference("san_config_path", cert_path("san.cnf"))
 const csr = @load_preference("signing_request_path", cert_path("server.csr"))
 # Following naming convention from LetsEncrypt / Certbot
 # https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
-# We dont have a chain / fullchain, because our private ca directly signs the csr
+# We don't have a chain / fullchain, because our private ca directly signs the csr
 const server_key = @load_preference("server_privkey_path", cert_path("privkey.pem"))
 const server_cert = @load_preference("server_cert_path", cert_path("cert.pem"))
 

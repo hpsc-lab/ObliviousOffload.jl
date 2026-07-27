@@ -142,7 +142,7 @@ function run(endpoint, args...; kwargs...)
     host = "https://$hostname:$port"
 
     # For the initial handshake, `require_ssl_verification=false` is required.
-    # We dont pass it as a regular argument, because it could potentially interfere with the arguments of the function being called 
+    # We don't pass it as a regular argument, because it could potentially interfere with the arguments of the function being called
     insecure_tls = get(task_local_storage(), :insecure_tls, false)
     if insecure_tls
         # When require_ssl_verification=false, no custom client can be passed to HTTP.post
