@@ -30,22 +30,6 @@ The package can be configured via the `[ObliviousOffload]` section in `LocalPref
 All variables are optional with defaults for local testing.  
 The default is no auth and connecting to localhost as the remote.
 
-| Variable | Description | Default |
-|---|---|---|
-| `port` | Port where the server is reachable | 8080 |
-| `hostname` | DNS name where the server is reachable | "localhost" |
-| `username` | Basic-auth username | nothing |
-| `password` | Basic-auth password | nothing |
-||||
-|`cert_dir` | Directory where SSL related files are stored | "certs/" |
-|`ca_cert_path` | Path where the ca certificate is stored | "\<cert_dir\>/ca.pem" |
-|`ca_key_path` | Path where the ca certificate key is stored | "\<cert_dir\>/ca-key.pem" |
-|`trusted_ca_path` | Path where the trusted remote ca certificate is stored | "\<cert_dir\>/remote-ca.pem" |
-|`server_privkey_path` | Path where the server certificate key is stored | "\<cert_dir\>/privkey.pem" |
-|`server_cert_path` | Path where the server certificate is stored | "\<cert_dir\>/cert.pem" |
-|`san_config_path` | Path where the config file for Subject Alternative Names is stored | "\<cert_dir\>/san.cnf" |
-|`signing_request_path` | Path where the server certificate signing request is stored | "\<cert_dir\>/server.csr" |
-
 A complete LocalPreferences entry could look like this:
 ```toml
 [ObliviousOffload]
@@ -56,10 +40,10 @@ port = 8080
 hostname = "localhost"
 
 # Basic-auth username
-username = "test"
+username = ""
 
 # Basic-auth password
-password = "123"
+password = ""
 
 # Directory where SSL related files are stored
 cert_dir = "certs/"

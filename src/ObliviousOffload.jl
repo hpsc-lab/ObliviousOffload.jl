@@ -19,9 +19,9 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 # Fields
 
 - `port::Union{Int, String}`: Server port
-- `hostname::String}`: Server hostname
-- `username`: Username for basic authentication
-- `password`: Password for basic authentication)
+- `hostname::String`: Server hostname
+- `username::String`: Username for basic authentication
+- `password::String`: Password for basic authentication
 - `cert_dir::String`: Directory for certificate files
 - `ca_cert_path::String`: Path to the CA certificate
 - `ca_key_path::String`: Path to the CA private key
@@ -46,8 +46,8 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 struct ConnectParams
     port::Union{Int, String}
     hostname::String
-    username
-    password
+    username::String
+    password::String
     cert_dir::String
     ca_cert_path::String
     ca_key_path::String
@@ -81,14 +81,17 @@ struct ConnectParams
     )
         host = "https://$hostname:$port"
 
+        username = username || ""
+        password = password || ""
+
         # Reset auth credentials when using insecure TLS (e.g., during handshake)
-        if insecure_tls && (username !== nothing || password !== nothing)
-            @warn "Authentication cannot be used with insecure TLS. Username and password have been reset to nothing."
-            username = nothing
-            password = nothing
+        if insecure_tls && (username !== "" || password !== "")
+            @warn "Authentication cannot be used with insecure TLS. Username and password have been reset."
+            username = ""
+            password = ""
         end
 
-        basicauth = if username !== nothing && password !== nothing
+        basicauth = if username !== "" && password !== ""
             (username, password)
         else
             nothing
@@ -214,7 +217,7 @@ function create_server(conn::ConnectParams)
     secure_transport.ensure_server(conn)
     router = HTTP.Router()
 
-    handler = if conn.username !== nothing && conn.password !== nothing
+    handler = if conn.username !== "" && conn.password != ""
         basic_auth_middleware(router, conn.username, conn.password)
     else
         router
