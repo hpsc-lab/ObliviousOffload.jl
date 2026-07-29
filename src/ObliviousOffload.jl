@@ -324,7 +324,7 @@ function offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
     ])
     
     basicauth = if conn.username !== "" && conn.password !== ""
-            (username, password)
+            (conn.username, conn.password)
     else
         nothing
     end
