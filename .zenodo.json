@@ -1,6 +1,6 @@
 {
     "title": "ObliviousOffload.jl",
-    "description": "Offloading of julia functions to remote Server via HTTP (TLS), demonstrating a server client architecture for SecureArithmetic (OpenFHE).",
+    "description": "Offloading Julia functions to a remote server via HTTP (TLS)",
     "license": "MIT",
     "upload_type": "software",
     "creators": [
