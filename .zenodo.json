@@ -1,0 +1,19 @@
+{
+    "title": "ObliviousOffload.jl",
+    "description": "Offloading Julia functions to a remote server via HTTP (TLS)",
+    "license": "MIT",
+    "upload_type": "software",
+    "creators": [
+        {
+            "affiliation": "High-Performance Scientific Computing, University of Augsburg, Germany",
+            "name": "Finke, Tom",
+            "orcid": "0000-0002-1329-2503"
+        },
+        {
+            "affiliation": "High-Performance Scientific Computing, University of Augsburg, Germany",
+            "name": "Schlottke-Lakemper, Michael",
+            "orcid": "0000-0002-3195-2536"
+        }
+    ],
+    "access_right": "open"
+}
