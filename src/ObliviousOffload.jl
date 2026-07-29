@@ -18,7 +18,7 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 
 # Fields
 
-- `port::Union{Int, String}`: Server port
+- `port::Int`: Server port
 - `hostname::String`: Server hostname
 - `username::String`: Username for basic authentication
 - `password::String`: Password for basic authentication
@@ -44,7 +44,7 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 - Basic authentication is automatically disabled if either username or password is `nothing`
 """
 struct ConnectParams
-    port::Union{Int, String}
+    port::Int
     hostname::String
     username::String
     password::String
