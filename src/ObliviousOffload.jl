@@ -35,7 +35,6 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 # Computed Properties
 
 - `host::String`: Computed as "https://hostname:port"
-- `basicauth`: Tuple of (username, password) if both are provided, otherwise nothing
 
 # Notes
 
@@ -59,7 +58,6 @@ struct ConnectParams
     insecure_tls::Bool
     # Computed properties
     host::String
-    basicauth
 
     function ConnectParams(;
         port = @load_preference("port", 8080),
@@ -91,11 +89,6 @@ struct ConnectParams
             password = ""
         end
 
-        basicauth = if username !== "" && password !== ""
-            (username, password)
-        else
-            nothing
-        end
         new(
             port,
             hostname,
@@ -111,7 +104,6 @@ struct ConnectParams
             signing_request_path,
             insecure_tls,
             host,
-            basicauth,
         )
     end
 end
@@ -331,8 +323,13 @@ function offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
         "kwargs" => make_part(kwargs),
     ])
     
+    basicauth = if conn.username !== "" && conn.password !== ""
+            (username, password)
+    else
+        nothing
+    end
     response = HTTP.post("$(conn.host)/$endpoint", ["Content-Type" => HTTP.content_type(form)], form;
-                         conn.basicauth, client, require_ssl_verification=!conn.insecure_tls)
+                         basicauth, client, require_ssl_verification=!conn.insecure_tls)
 
     ct = HTTP.header(response, "Content-Type")
     resp_parts = HTTP.parse_multipart_form(ct, response.body)
