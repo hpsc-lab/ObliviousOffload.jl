@@ -35,8 +35,6 @@ end
 # Block only when executed as a script (`julia server.jl`), not when included
 # This is required by the test suite, which starts the server in-process and closes it itself.
 if abspath(PROGRAM_FILE) == @__FILE__
-    include("../parse_args.jl")
-    kwargs = parse_commandline()
-    server = run_server(;kwargs...)
+    server = run_server()
     wait(server)
 end

@@ -22,7 +22,5 @@ function run_client(;kwargs...)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    include("../parse_args.jl")
-    kwargs = parse_commandline()
-    run_client(;kwargs...)
+    run_client()
 end

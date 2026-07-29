@@ -57,8 +57,6 @@ The handshake automatically creates all necessary files.
 ### Running Examples
 
 The Package provides example scripts for showcasing basic functionality. 
-All example scripts accept the configuration parameters as optional command line arguments.
-Run the example scripts with `--help` to see all available arguments. 
 
 1. [Server] Clone the project and initialize 
 ```sh
