@@ -7,7 +7,7 @@ function run_client(;kwargs...)
     pem = tempname()
     write(pem, ca_binary)
     fp = try
-        ObliviousOffload.secure_transport.fingerprint(pem)
+        ObliviousOffload.fingerprint(pem)
     catch
         rm(pem, force=true)
         error("response body is not a valid PEM certificate")

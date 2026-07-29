@@ -109,7 +109,6 @@ struct ConnectParams
 end
 
 include("secure_transport.jl")
-using .secure_transport
 
 """
     make_part(obj) -> HTTP.Multipart
@@ -206,7 +205,7 @@ OffloadServer(conn::ConnectParams) = create_server(conn)
 OffloadServer() = create_server(ConnectParams())
 
 function create_server(conn::ConnectParams)
-    secure_transport.ensure_server(conn)
+    ensure_server(conn)
     router = HTTP.Router()
 
     handler = if conn.username !== "" && conn.password !== ""

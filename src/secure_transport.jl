@@ -1,5 +1,3 @@
-module secure_transport
-
 using HTTP
 using Sockets: IPAddr
 using OpenSSL_CLI_jll
@@ -73,5 +71,3 @@ function ensure_server(conn::ConnectParams)
         generate_server_cert(conn::ConnectParams)
     end
 end
-
-end # module secure_transport
