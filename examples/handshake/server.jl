@@ -1,15 +1,15 @@
 using ObliviousOffload
 
 function run_server(; kwargs...)
-    conn = ObliviousOffload.ConnectParams(; kwargs..., insecure_tls=true)
-    server = ObliviousOffload.OffloadServer(conn)
+    conn = ConnectParams(; kwargs..., insecure_tls=true)
+    server = OffloadServer(conn)
 
     function handshake()
         println("CA certificate fingerprint: $(ObliviousOffload.secure_transport.ca_fingerprint(conn))")
         return read(conn.ca_cert_path)
     end
 
-    ObliviousOffload.register!(server, "handshake", handshake)
+    register_service!(server, "handshake", handshake)
     return server
 end
 

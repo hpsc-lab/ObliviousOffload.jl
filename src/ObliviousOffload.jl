@@ -6,8 +6,7 @@ using HTTP
 using Reseau.TLS
 using Base64
 using Preferences: @load_preference
-# include("types.jl")
-# using .types: ConnectParams, OffloadServer
+export OffloadServer, ConnectParams, register_service!, offload
 
 struct ConnectParams
     port::Union{Int, String}
@@ -183,7 +182,7 @@ function Base.:close(server::OffloadServer)
 end
 
 
-function register!(server::OffloadServer, endpoint, function_handler)
+function register_service!(server::OffloadServer, endpoint, function_handler)
     HTTP.register!(server.router, "POST", "/$endpoint") do req
         try
             parts = HTTP.parse_multipart_form(req)
@@ -203,7 +202,7 @@ function register!(server::OffloadServer, endpoint, function_handler)
     end
 end
 
-function run(conn::ConnectParams, endpoint::String, args...; kwargs...)
+function offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
     # For the initial handshake, `require_ssl_verification=false` is required.
     if conn.insecure_tls
         # When require_ssl_verification=false, no custom client can be passed to HTTP.post
@@ -230,6 +229,6 @@ function run(conn::ConnectParams, endpoint::String, args...; kwargs...)
     return result
 end
 
-run(endpoint::String, args...; kwargs...) = run(ConnectParams(), endpoint, args...; kwargs...) 
+offload(endpoint::String, args...; kwargs...) = run(ConnectParams(), endpoint, args...; kwargs...) 
 
 end # module ObliviousOffload
