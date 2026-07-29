@@ -258,7 +258,7 @@ positional and keyword arguments are serialized, sent as multipart form data, an
 server = OffloadServer()
 register_service!(server, "add", (x, y) -> x + y)
 function greet(name; greeting="Hello")
-    return "$(greeting), $(name)!"
+    return "\$(greeting), \$(name)!"
 end
 register_service!(server, "greet", greet)
 ```
