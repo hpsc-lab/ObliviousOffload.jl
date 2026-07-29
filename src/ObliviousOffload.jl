@@ -18,10 +18,10 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 
 # Fields
 
-- `port::Union{Int, String}`: Server port
-- `hostname::String}`: Server hostname
-- `username`: Username for basic authentication
-- `password`: Password for basic authentication)
+- `port::Int`: Server port
+- `hostname::String`: Server hostname
+- `username::String`: Username for basic authentication
+- `password::String`: Password for basic authentication
 - `cert_dir::String`: Directory for certificate files
 - `ca_cert_path::String`: Path to the CA certificate
 - `ca_key_path::String`: Path to the CA private key
@@ -35,7 +35,6 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 # Computed Properties
 
 - `host::String`: Computed as "https://hostname:port"
-- `basicauth`: Tuple of (username, password) if both are provided, otherwise nothing
 
 # Notes
 
@@ -44,10 +43,10 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 - Basic authentication is automatically disabled if either username or password is `nothing`
 """
 struct ConnectParams
-    port::Union{Int, String}
+    port::Integer
     hostname::String
-    username
-    password
+    username::String
+    password::String
     cert_dir::String
     ca_cert_path::String
     ca_key_path::String
@@ -59,7 +58,6 @@ struct ConnectParams
     insecure_tls::Bool
     # Computed properties
     host::String
-    basicauth
 
     function ConnectParams(;
         port = @load_preference("port", 8080),
@@ -81,18 +79,16 @@ struct ConnectParams
     )
         host = "https://$hostname:$port"
 
+        username = something(username, "")
+        password = something(password, "")
+
         # Reset auth credentials when using insecure TLS (e.g., during handshake)
-        if insecure_tls && (username !== nothing || password !== nothing)
-            @warn "Authentication cannot be used with insecure TLS. Username and password have been reset to nothing."
-            username = nothing
-            password = nothing
+        if insecure_tls && (username !== "" || password !== "")
+            @warn "Authentication cannot be used with insecure TLS. Username and password have been reset."
+            username = ""
+            password = ""
         end
 
-        basicauth = if username !== nothing && password !== nothing
-            (username, password)
-        else
-            nothing
-        end
         new(
             port,
             hostname,
@@ -108,13 +104,11 @@ struct ConnectParams
             signing_request_path,
             insecure_tls,
             host,
-            basicauth,
         )
     end
 end
 
 include("secure_transport.jl")
-using .secure_transport
 
 """
     make_part(obj) -> HTTP.Multipart
@@ -139,7 +133,7 @@ Deserialize a vector of multipart form parts into a name-value dictionary.
 Parts with content type `application/x-julia-serialized-object` are deserialized
 via `Serialization.deserialize`.
 """
-function parse_parts(parts::Vector{HTTP.Multipart})
+function parse_parts(parts)
     Dict(
         p.name => if p.contenttype == "application/x-julia-serialized-object"
             deserialize(p.data)
@@ -151,7 +145,7 @@ function parse_parts(parts::Vector{HTTP.Multipart})
 end
 
 
-function basic_auth_middleware(handler, username::AbstractString, password::AbstractString)
+function basic_auth_middleware(handler, username, password)
     expected = base64encode("$username:$password")
     return function(req)
         auth = HTTP.header(req, "Authorization", "")
@@ -203,30 +197,27 @@ wait(server)
 struct OffloadServer
     server::HTTP.Server
     router::HTTP.Handlers.Router
-end
 
+    function OffloadServer(conn)
+        ensure_server(conn)
+        router = HTTP.Router()
 
+        handler = if conn.username !== "" && conn.password !== ""
+            basic_auth_middleware(router, conn.username, conn.password)
+        else
+            router
+        end
+        handler = access_log_middleware(handler)
 
-OffloadServer(conn::ConnectParams) = create_server(conn)
-OffloadServer() = create_server(ConnectParams())
-
-function create_server(conn::ConnectParams)
-    secure_transport.ensure_server(conn)
-    router = HTTP.Router()
-
-    handler = if conn.username !== nothing && conn.password !== nothing
-        basic_auth_middleware(router, conn.username, conn.password)
-    else
-        router
+        tls_config = TLS.Config(; cert_file=conn.server_cert_path, key_file=conn.server_privkey_path)
+        listener = TLS.listen("tcp", "0.0.0.0:$(conn.port)", tls_config)
+        @info "ObliviousOffload server listening on 0.0.0.0:$(conn.port) (TLS), certificate for '$(conn.hostname)'"
+        server = HTTP.serve!(handler, listener)
+        return new(server, router)
     end
-    handler = access_log_middleware(handler)
-
-    tls_config = TLS.Config(; cert_file=conn.server_cert_path, key_file=conn.server_privkey_path)
-    listener = TLS.listen("tcp", "0.0.0.0:$(conn.port)", tls_config)
-    @info "ObliviousOffload server listening on 0.0.0.0:$(conn.port) (TLS), certificate for '$(conn.hostname)'"
-    server = HTTP.serve!(handler, listener)
-    return OffloadServer(server, router)
 end
+
+OffloadServer() = OffloadServer(ConnectParams())
 
 function Base.:wait(server::OffloadServer)
     wait(server.server)
@@ -263,7 +254,7 @@ end
 register_service!(server, "greet", greet)
 ```
 """
-function register_service!(server::OffloadServer, endpoint, function_handler)
+function register_service!(server, endpoint, function_handler)
     HTTP.register!(server.router, "POST", "/$endpoint") do req
         try
             parts = HTTP.parse_multipart_form(req)
@@ -328,8 +319,13 @@ function offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
         "kwargs" => make_part(kwargs),
     ])
     
+    basicauth = if conn.username !== "" && conn.password !== ""
+            (conn.username, conn.password)
+    else
+        nothing
+    end
     response = HTTP.post("$(conn.host)/$endpoint", ["Content-Type" => HTTP.content_type(form)], form;
-                         conn.basicauth, client, require_ssl_verification=!conn.insecure_tls)
+                         basicauth, client, require_ssl_verification=!conn.insecure_tls)
 
     ct = HTTP.header(response, "Content-Type")
     resp_parts = HTTP.parse_multipart_form(ct, response.body)

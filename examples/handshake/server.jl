@@ -5,7 +5,7 @@ function run_server(; kwargs...)
     server = OffloadServer(conn)
 
     function handshake()
-        println("CA certificate fingerprint: $(ObliviousOffload.secure_transport.ca_fingerprint(conn))")
+        println("CA certificate fingerprint: $(ObliviousOffload.ca_fingerprint(conn))")
         return read(conn.ca_cert_path)
     end
 
