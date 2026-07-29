@@ -1,8 +1,8 @@
 using ObliviousOffload
 
 function run_client(;kwargs...)
-    conn = ObliviousOffload.ConnectParams(;kwargs..., insecure_tls=true)
-    ca_binary = ObliviousOffload.run(conn, "handshake")
+    conn = ConnectParams(;kwargs..., insecure_tls=true)
+    ca_binary = offload(conn, "handshake")
 
     pem = tempname()
     write(pem, ca_binary)

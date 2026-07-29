@@ -32,20 +32,59 @@ The default is no auth and connecting to localhost as the remote.
 
 | Variable | Description | Default |
 |---|---|---|
-| port | Port where the server is reachable | 8080 |
-| hostname | DNS name where the server is reachable | localhost |
-| username | Basic-auth username | nothing |
-| password | Basic-auth password | nothing |
+| `port` | Port where the server is reachable | 8080 |
+| `hostname` | DNS name where the server is reachable | "localhost" |
+| `username` | Basic-auth username | nothing |
+| `password` | Basic-auth password | nothing |
 ||||
-|cert_dir | Directory where SSL related files are stored | <WorkingDir>/certs |
-|ca_cert_path | Path where the ca certificate is stored | <CertDir>/ca.pem |
-|ca_key_path | Path where the ca certificate key is stored | <CertDir>/ca-key.pem |
-|trusted_ca_path | Path where the trusted remote ca certificate is stored | <CertDir>/remote-ca.pem |
-|server_privkey_path | Path where the server certificate key is stored | <CertDir>/privkey.pem |
-|server_cert_path | Path where the server certificate is stored | <CertDir>/cert.pem |
-|san_config_path | Path where the config file for Subject Alternative Names is stored | <CertDir>/san.cnf |
-|signing_request_path | Path where the server certificate signing request is stored | <CertDir>/server.csr |
+|`cert_dir` | Directory where SSL related files are stored | "certs/" |
+|`ca_cert_path` | Path where the ca certificate is stored | "\<cert_dir\>/ca.pem" |
+|`ca_key_path` | Path where the ca certificate key is stored | "\<cert_dir\>/ca-key.pem" |
+|`trusted_ca_path` | Path where the trusted remote ca certificate is stored | "\<cert_dir\>/remote-ca.pem" |
+|`server_privkey_path` | Path where the server certificate key is stored | "\<cert_dir\>/privkey.pem" |
+|`server_cert_path` | Path where the server certificate is stored | "\<cert_dir\>/cert.pem" |
+|`san_config_path` | Path where the config file for Subject Alternative Names is stored | "\<cert_dir\>/san.cnf" |
+|`signing_request_path` | Path where the server certificate signing request is stored | "\<cert_dir\>/server.csr" |
 
+A complete LocalPreferences entry could look like this:
+```toml
+[ObliviousOffload]
+# Port where the server is reachable
+port = 8080
+
+# DNS name/IP address where the server is reachable
+hostname = "localhost"
+
+# Basic-auth username
+username = "test"
+
+# Basic-auth password
+password = "123"
+
+# Directory where SSL related files are stored
+cert_dir = "certs/"
+
+# Path where the CA certificate is stored
+ca_cert_path = "certs/ca.pem"
+
+# Path where the CA certificate key is stored
+ca_key_path = "certs/ca-key.pem"
+
+# Path where the trusted remote CA certificate is stored
+trusted_ca_path = "certs/remote-ca.pem"
+
+# Path where the server certificate key is stored
+server_privkey_path = "certs/privkey.pem"
+
+# Path where the server certificate is stored
+server_cert_path = "certs/cert.pem"
+
+# Path where the config files for Subject Alternative Names is stored
+san_config_path = "certs/san.cnf"
+
+# Path where the server certificate signing request is stored
+signing_request_path = "certs/server.csr"
+```
 
 ### TLS setup
 

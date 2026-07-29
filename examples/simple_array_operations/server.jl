@@ -24,10 +24,10 @@ end
 function run_server(; kwargs...)
     # Connection settings (port, hostname, username, password) are read from
     # LocalPreferences.toml, section [ObliviousOffload].
-    conn = ObliviousOffload.ConnectParams(; kwargs...)
-    server = ObliviousOffload.OffloadServer(conn)
+    conn = ConnectParams(; kwargs...)
+    server = OffloadServer(conn)
 
-    ObliviousOffload.register!(server, "simple_array_operations", simple_array_operations)
+    register_service!(server, "simple_array_operations", simple_array_operations)
     return server
 end
 

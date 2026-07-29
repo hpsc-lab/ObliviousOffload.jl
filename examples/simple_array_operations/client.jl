@@ -57,7 +57,7 @@ println()
 
 context_unencrypted = SecureContext(Unencrypted())
 
-function simple_array_operations_remote(conn::ObliviousOffload.ConnectParams, context)
+function simple_array_operations_remote(conn::ConnectParams, context)
     public_key, private_key = generate_keys(context)
     init_multiplication!(context, private_key)
     init_bootstrapping!(context, private_key)
@@ -77,7 +77,7 @@ function simple_array_operations_remote(conn::ObliviousOffload.ConnectParams, co
 
 
     
-    (; sa1, sa_add, sa_sub, sa_scalar, sa_mult, sa_shift1, sa_shift2, sa_after_bootstrap) = ObliviousOffload.run(conn, "simple_array_operations", sa1, sa2)
+    (; sa1, sa_add, sa_sub, sa_scalar, sa_mult, sa_shift1, sa_shift2, sa_after_bootstrap) = offload(conn, "simple_array_operations", sa1, sa2)
 
     println()
     println("Results of homomorphic computations: ")
@@ -113,7 +113,7 @@ end
 
 
 function run_client(; kwargs...)
-    conn = ObliviousOffload.ConnectParams(; kwargs...)
+    conn = ConnectParams(; kwargs...)
     ################################################################################
     println("="^80)
     println("simple_array_operations with an OpenFHE context")
