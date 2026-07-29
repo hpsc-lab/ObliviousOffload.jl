@@ -43,7 +43,7 @@ Configuration parameters for connecting to or running an ObliviousOffload server
 - Basic authentication is automatically disabled if either username or password is `nothing`
 """
 struct ConnectParams
-    port::Int
+    port::Integer
     hostname::String
     username::String
     password::String
