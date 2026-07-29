@@ -38,13 +38,13 @@ The default is no auth and connecting to localhost as the remote.
 | password | Basic-auth password | nothing |
 ||||
 |cert_dir | Directory where SSL related files are stored | <WorkingDir>/certs |
-|ca_cert_path | Path where the ca certificate is stored | certs/ca.pem |
-|ca_key_path | Path where the ca certificate key is stored | certs/ca-key.pem |
-|trusted_ca_path | Path where the trusted remote ca certificate is stored | certs/remote-ca.pem |
-|server_privkey_path | Path where the server certificate key is stored | certs/privkey.pem |
-|server_cert_path | Path where the server certificate is stored | certs/cert.pem |
-|san_config_path | Path where the config file for Subject Alternative Names is stored | certs/san.cnf |
-|signing_request_path | Path where the server certificate signing request is stored | certs/server.csr |
+|ca_cert_path | Path where the ca certificate is stored | <CertDir>/ca.pem |
+|ca_key_path | Path where the ca certificate key is stored | <CertDir>/ca-key.pem |
+|trusted_ca_path | Path where the trusted remote ca certificate is stored | <CertDir>/remote-ca.pem |
+|server_privkey_path | Path where the server certificate key is stored | <CertDir>/privkey.pem |
+|server_cert_path | Path where the server certificate is stored | <CertDir>/cert.pem |
+|san_config_path | Path where the config file for Subject Alternative Names is stored | <CertDir>/san.cnf |
+|signing_request_path | Path where the server certificate signing request is stored | <CertDir>/server.csr |
 
 
 ### TLS setup
@@ -54,12 +54,14 @@ For development / POC, we create our own CA and sign a server certificate.
 For this purpose, the "handshake" server and client example scripts exist. 
 The handshake automatically creates all necessary files.
 
-### Initial Setup
+### Running Examples
+
+The Package provides example scripts for showcasing basic functionality. 
 
 1. [Server] Clone the project and initialize 
 ```sh
 git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
-cd ObliviousOffload.jl
+cd ObliviousOffload.jl/examples
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 > [!NOTE]
@@ -74,18 +76,18 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 2. [Client] Clone the project and initialize 
 ```sh
 git clone git@github.com:hpsc-lab/ObliviousOffload.jl.git
-cd ObliviousOffload.jl
+cd ObliviousOffload.jl/examples
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 3. [Server] Start the server:
 ```sh
-julia --project=. examples/handshake/server.jl
+julia --project=. handshake/server.jl
 ```
 The server automatically checks for existing CA and Server certificate and creates them if necessary.
 
 4. [Client] Run the handshake script 
 ```sh
-julia --project=. examples/handshake/client.jl
+julia --project=. handshake/client.jl
 ```
 The Handshake script connects to the server and downloads its CA.pem. 
 Since it cannot yet trust the server on that first connection, both the server and the handshake script display the CA.pem fingerprint.
@@ -96,11 +98,11 @@ A trusted client-server connection is now established.
 Now, any client side scripts can connect to the server to offload data processing. 
 For example, run 
 ```sh
-julia --project=. examples/simple_array_operations/server.jl
+julia --project=. simple_array_operations/server.jl
 ```
 and
 ```sh
-julia --project=. examples/simple_array_operations/client.jl
+julia --project=. simple_array_operations/client.jl
 ```
 
 ## Authors
