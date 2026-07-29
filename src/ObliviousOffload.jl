@@ -229,6 +229,6 @@ function offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
     return result
 end
 
-offload(endpoint::String, args...; kwargs...) = run(ConnectParams(), endpoint, args...; kwargs...) 
+offload(endpoint::String, args...; kwargs...) = offload(ConnectParams(), endpoint, args...; kwargs...) 
 
 end # module ObliviousOffload
