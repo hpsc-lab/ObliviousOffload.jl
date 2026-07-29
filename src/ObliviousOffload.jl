@@ -197,30 +197,27 @@ wait(server)
 struct OffloadServer
     server::HTTP.Server
     router::HTTP.Handlers.Router
-end
 
+    function OffloadServer(conn::ConnectParams)
+        ensure_server(conn)
+        router = HTTP.Router()
 
+        handler = if conn.username !== "" && conn.password !== ""
+            basic_auth_middleware(router, conn.username, conn.password)
+        else
+            router
+        end
+        handler = access_log_middleware(handler)
 
-OffloadServer(conn::ConnectParams) = create_server(conn)
-OffloadServer() = create_server(ConnectParams())
-
-function create_server(conn::ConnectParams)
-    ensure_server(conn)
-    router = HTTP.Router()
-
-    handler = if conn.username !== "" && conn.password !== ""
-        basic_auth_middleware(router, conn.username, conn.password)
-    else
-        router
+        tls_config = TLS.Config(; cert_file=conn.server_cert_path, key_file=conn.server_privkey_path)
+        listener = TLS.listen("tcp", "0.0.0.0:$(conn.port)", tls_config)
+        @info "ObliviousOffload server listening on 0.0.0.0:$(conn.port) (TLS), certificate for '$(conn.hostname)'"
+        server = HTTP.serve!(handler, listener)
+        return new(server, router)
     end
-    handler = access_log_middleware(handler)
-
-    tls_config = TLS.Config(; cert_file=conn.server_cert_path, key_file=conn.server_privkey_path)
-    listener = TLS.listen("tcp", "0.0.0.0:$(conn.port)", tls_config)
-    @info "ObliviousOffload server listening on 0.0.0.0:$(conn.port) (TLS), certificate for '$(conn.hostname)'"
-    server = HTTP.serve!(handler, listener)
-    return OffloadServer(server, router)
 end
+
+OffloadServer() = OffloadServer(ConnectParams())
 
 function Base.:wait(server::OffloadServer)
     wait(server.server)
