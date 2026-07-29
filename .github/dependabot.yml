@@ -15,6 +15,7 @@ updates:
       - "/"
       - "/docs"
       - "/test"
+      - "/examples"
     schedule:
       interval: "daily"
     groups:   
