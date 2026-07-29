@@ -133,7 +133,7 @@ Deserialize a vector of multipart form parts into a name-value dictionary.
 Parts with content type `application/x-julia-serialized-object` are deserialized
 via `Serialization.deserialize`.
 """
-function parse_parts(parts::Vector{HTTP.Multipart})
+function parse_parts(parts)
     Dict(
         p.name => if p.contenttype == "application/x-julia-serialized-object"
             deserialize(p.data)
@@ -145,7 +145,7 @@ function parse_parts(parts::Vector{HTTP.Multipart})
 end
 
 
-function basic_auth_middleware(handler, username::AbstractString, password::AbstractString)
+function basic_auth_middleware(handler, username, password)
     expected = base64encode("$username:$password")
     return function(req)
         auth = HTTP.header(req, "Authorization", "")
@@ -198,7 +198,7 @@ struct OffloadServer
     server::HTTP.Server
     router::HTTP.Handlers.Router
 
-    function OffloadServer(conn::ConnectParams)
+    function OffloadServer(conn)
         ensure_server(conn)
         router = HTTP.Router()
 
@@ -254,7 +254,7 @@ end
 register_service!(server, "greet", greet)
 ```
 """
-function register_service!(server::OffloadServer, endpoint, function_handler)
+function register_service!(server, endpoint, function_handler)
     HTTP.register!(server.router, "POST", "/$endpoint") do req
         try
             parts = HTTP.parse_multipart_form(req)

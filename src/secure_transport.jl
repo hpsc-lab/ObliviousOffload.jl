@@ -19,7 +19,7 @@ function is_valid_cert(cert; ca=nothing)
     return true
 end
 
-function generate_ca(conn::ConnectParams)
+function generate_ca(conn)
     mkpath(conn.cert_dir)
     run(openssl(`req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
          -keyout $(conn.ca_key_path) -out $(conn.ca_cert_path) -days 3650 -nodes
@@ -28,7 +28,7 @@ function generate_ca(conn::ConnectParams)
          -addext keyUsage=critical,keyCertSign,cRLSign`))
 end
 
-function generate_server_cert(conn::ConnectParams)
+function generate_server_cert(conn)
     mkpath(conn.cert_dir)
 
     run(openssl(`req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1
@@ -58,16 +58,16 @@ end
 ca_fingerprint() = fingerprint(ConnectParams().ca_cert_path)
 ca_fingerprint(conn::ConnectParams) = fingerprint(conn.ca_cert_path)
 
-function ensure_ca(conn::ConnectParams)
+function ensure_ca(conn)
     if !is_valid_cert(conn.ca_cert_path)
         generate_ca(conn)
     end
 end
 
 
-function ensure_server(conn::ConnectParams)
-    ensure_ca(conn::ConnectParams)
+function ensure_server(conn)
+    ensure_ca(conn)
     if !is_valid_cert(conn.server_cert_path; ca=conn.ca_cert_path)
-        generate_server_cert(conn::ConnectParams)
+        generate_server_cert(conn)
     end
 end
