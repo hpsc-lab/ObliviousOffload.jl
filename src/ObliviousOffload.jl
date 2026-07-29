@@ -8,6 +8,41 @@ using Base64
 using Preferences: @load_preference
 export OffloadServer, ConnectParams, register_service!, offload
 
+"""
+    ConnectParams(; port, hostname, username, password,
+                   cert_dir, ca_cert_path, ca_key_path, trusted_ca_path,
+                   server_privkey_path, server_cert_path, san_config_path,
+                   signing_request_path, insecure_tls=false) -> ConnectParams
+
+Configuration parameters for connecting to or running an ObliviousOffload server.
+
+# Fields
+
+- `port::Union{Int, String}`: Server port
+- `hostname::String}`: Server hostname
+- `username`: Username for basic authentication
+- `password`: Password for basic authentication)
+- `cert_dir::String`: Directory for certificate files
+- `ca_cert_path::String`: Path to the CA certificate
+- `ca_key_path::String`: Path to the CA private key
+- `trusted_ca_path::String`: Path to the remote CA certificate for client verification
+- `server_privkey_path::String`: Path to the server's private key
+- `server_cert_path::String`: Path to the server's certificate
+- `san_config_path::String`: Path to the Subject Alternative Names configuration file
+- `signing_request_path::String`: Path to the certificate signing request
+- `insecure_tls::Bool`: If true, disables TLS verification (default: false)
+
+# Computed Properties
+
+- `host::String`: Computed as "https://hostname:port"
+- `basicauth`: Tuple of (username, password) if both are provided, otherwise nothing
+
+# Notes
+
+- All paths are loaded from preferences if available, allowing project-wide configuration
+- When `insecure_tls=true`, username and password are automatically reset to `nothing`
+- Basic authentication is automatically disabled if either username or password is `nothing`
+"""
 struct ConnectParams
     port::Union{Int, String}
     hostname::String
@@ -145,6 +180,26 @@ function access_log_middleware(handler)
     end
 end
 
+"""
+    OffloadServer(conn::ConnectParams) -> OffloadServer
+    OffloadServer() -> OffloadServer
+
+Creates a TLS-secured HTTP server that listens for incoming function calls. Services are
+registered with [`register_service!`](@ref) and called remotely via [`offload`](@ref).
+
+# Fields
+
+- `server::HTTP.Server`: The underlying HTTP server instance
+- `router::HTTP.Handlers.Router`: The HTTP router for dispatching requests to registered services
+
+# Examples
+
+```julia
+server = OffloadServer()
+register_service!(server, "myfunc", (x, y) -> x + y)
+wait(server)
+```
+"""
 struct OffloadServer
     server::HTTP.Server
     router::HTTP.Handlers.Router
@@ -182,6 +237,32 @@ function Base.:close(server::OffloadServer)
 end
 
 
+"""
+    register_service!(server::OffloadServer, endpoint, function_handler)
+
+Register a function as a remotely callable service on the server.
+
+The function is exposed as a POST endpoint at `/<endpoint>`. When called via [`offload`](@ref),
+positional and keyword arguments are serialized, sent as multipart form data, and passed to
+`function_handler`. The return value is serialized back to the caller.
+
+# Arguments
+
+- `server::OffloadServer`: The server to register the service on
+- `endpoint`: The URL path segment for this service (e.g., `"myfunc"` becomes `/myfunc`)
+- `function_handler`: A callable that accepts the offloaded arguments and keyword arguments
+
+# Examples
+
+```julia
+server = OffloadServer()
+register_service!(server, "add", (x, y) -> x + y)
+function greet(name; greeting="Hello")
+    return "$(greeting), $(name)!"
+end
+register_service!(server, "greet", greet)
+```
+"""
 function register_service!(server::OffloadServer, endpoint, function_handler)
     HTTP.register!(server.router, "POST", "/$endpoint") do req
         try
@@ -202,6 +283,35 @@ function register_service!(server::OffloadServer, endpoint, function_handler)
     end
 end
 
+"""
+    offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
+    offload(endpoint::String, args...; kwargs...)
+
+Call a remote service registered on an ObliviousOffload server.
+
+Serializes `args` and `kwargs`, sends them as multipart form data to the server's `/<endpoint>`,
+and deserializes the result. Communication is secured via TLS using the certificates configured
+in `conn`.
+
+# Arguments
+
+- `conn::ConnectParams`: Connection parameters (omit to use defaults)
+- `endpoint::String`: The service endpoint to call
+- `args...`: Positional arguments passed to the remote function
+- `kwargs...`: Keyword arguments passed to the remote function
+
+# Returns
+
+The deserialized return value of the remote function.
+
+# Examples
+
+```julia
+offload("add", 2, 3)  # returns 5
+offload("greet", "Alice")  # returns "Hello, Alice!"
+offload("greet", "Bob", greeting="Howdy")  # returns "Howdy, Bob!"
+```
+"""
 function offload(conn::ConnectParams, endpoint::String, args...; kwargs...)
     # For the initial handshake, `require_ssl_verification=false` is required.
     if conn.insecure_tls
