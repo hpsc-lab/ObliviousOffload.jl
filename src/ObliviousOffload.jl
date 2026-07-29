@@ -79,8 +79,8 @@ struct ConnectParams
     )
         host = "https://$hostname:$port"
 
-        username = username || ""
-        password = password || ""
+        username = something(username, "")
+        password = something(password, "")
 
         # Reset auth credentials when using insecure TLS (e.g., during handshake)
         if insecure_tls && (username !== "" || password !== "")
@@ -209,7 +209,7 @@ function create_server(conn::ConnectParams)
     secure_transport.ensure_server(conn)
     router = HTTP.Router()
 
-    handler = if conn.username !== "" && conn.password != ""
+    handler = if conn.username !== "" && conn.password !== ""
         basic_auth_middleware(router, conn.username, conn.password)
     else
         router
