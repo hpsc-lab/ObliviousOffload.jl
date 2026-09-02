@@ -15,7 +15,7 @@ clear_scratchspaces!(ObliviousOffload)
 
     conn = (
             cert_dir = "$certs_dir",
-            trusted_ca_path = "$certs_dir/trusted_ca.pem", # set locally generated ca.pem as trusted ca, so that no handshake is necessary. Testing handshake separately
+            trusted_ca_path = "$certs_dir/trusted_ca.pem",
     )
 
     include("../examples/handshake/server.jl")
@@ -33,6 +33,17 @@ clear_scratchspaces!(ObliviousOffload)
     @test isfile("$certs_dir/cert.pem")
     @test isfile("$certs_dir/trusted_ca.pem")
     delete_scratch!(ObliviousOffload, "examples_handshake_dir")
+end
+
+@testset verbose=true showtiming=true "perform_handshake invalid certifcate" begin
+    certs_dir = get_scratch!(ObliviousOffload, "examples_handshake_dir")
+    @test isempty(readdir(certs_dir))
+
+    conn = ConnectParams(;
+            cert_dir = "$certs_dir",
+    )
+    invalid_cert_data = "123456789"
+    @test_throws ErrorException ObliviousOffload.perform_handshake(invalid_cert_data, conn)
 end
 
 @testset verbose=true showtiming=true "examples/simple_array_operations" begin
