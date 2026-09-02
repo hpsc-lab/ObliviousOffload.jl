@@ -35,7 +35,7 @@ clear_scratchspaces!(ObliviousOffload)
     delete_scratch!(ObliviousOffload, "examples_handshake_dir")
 end
 
-@testset verbose=true showtiming=true "perform_handshake invalid certifcate" begin
+@testset verbose=true showtiming=true "perform_handshake invalid certificate" begin
     certs_dir = get_scratch!(ObliviousOffload, "examples_handshake_dir")
     @test isempty(readdir(certs_dir))
 
