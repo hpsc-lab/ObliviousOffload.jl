@@ -71,3 +71,26 @@ function ensure_server(conn)
         generate_server_cert(conn)
     end
 end
+
+function offer_handshake(conn)
+    println("CA certificate fingerprint: $(ObliviousOffload.ca_fingerprint(conn))")
+    return read(conn.ca_cert_path)
+end
+
+function perform_handshake(ca_binary, conn)
+    pem = tempname()
+    write(pem, ca_binary)
+    fp = try
+        fingerprint(pem)
+    catch
+        rm(pem, force=true)
+        error("response body is not a valid PEM certificate")
+    end
+
+    @info "Received CA certificate, fingerprint: $fp"
+
+    mkpath(conn.cert_dir)
+    mv(pem, conn.trusted_ca_path, force=true)
+
+    @info "CA certificate automatically trusted and saved. You must manually check that the fingerprint is correct." path = conn.trusted_ca_path
+end

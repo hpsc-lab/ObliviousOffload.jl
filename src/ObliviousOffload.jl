@@ -242,6 +242,7 @@ positional and keyword arguments are serialized, sent as multipart form data, an
 - `server::OffloadServer`: The server to register the service on
 - `endpoint`: The URL path segment for this service (e.g., `"myfunc"` becomes `/myfunc`)
 - `function_handler`: A callable that accepts the offloaded arguments and keyword arguments
+- `args...`: Arbitrary additional parameters defined at register time and passed to the handler at runtime. Used for example in [`offer_handshake`](@ref) to allow access to the connection parameters.
 
 # Examples
 
@@ -254,7 +255,7 @@ end
 register_service!(server, "greet", greet)
 ```
 """
-function register_service!(server, endpoint, function_handler)
+function register_service!(server, endpoint, function_handler, args...)
     HTTP.register!(server.router, "POST", "/$endpoint") do req
         try
             parts = HTTP.parse_multipart_form(req)
@@ -262,7 +263,7 @@ function register_service!(server, endpoint, function_handler)
             fields = parse_parts(parts)
 
             # Functions registered with the server might be only registered after the server was already started
-            result = Base.invokelatest(function_handler, fields["args"]...; fields["kwargs"]...)
+            result = Base.invokelatest(function_handler, args..., fields["args"]...; fields["kwargs"]...)
 
             form = HTTP.Form(["result" => make_part(result)])
             body = read(form)
