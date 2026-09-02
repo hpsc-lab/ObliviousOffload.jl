@@ -242,7 +242,7 @@ positional and keyword arguments are serialized, sent as multipart form data, an
 - `server::OffloadServer`: The server to register the service on
 - `endpoint`: The URL path segment for this service (e.g., `"myfunc"` becomes `/myfunc`)
 - `function_handler`: A callable that accepts the offloaded arguments and keyword arguments
-- `args...`: Arbitrary additional parameters defined at register time and passed to the handler at runtime. Used for example in [`offer_handshake`](@ref) to allow access to the connection parameters.
+- `args...`: Arbitrary additional parameters defined at register time and passed to the handler at runtime. Used for example in [`ObliviousOffload.offer_handshake`](@ref) to allow access to the connection parameters.
 
 # Examples
 
