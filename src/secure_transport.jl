@@ -71,3 +71,42 @@ function ensure_server(conn)
         generate_server_cert(conn)
     end
 end
+
+"""
+    offer_handshake!(conn)
+
+Reads the ca certificate file, outputs its fingerprint and returns its content.
+
+Used for performing a handshake in combination with [`perform_handshake`](@ref).
+"""
+function offer_handshake(conn)
+    println("CA certificate fingerprint: $(ObliviousOffload.ca_fingerprint(conn))")
+    return read(conn.ca_cert_path)
+end
+
+"""
+    perform_handshake!(ca_binary, conn)
+
+Writes the ca certificate data to a temporary file, 
+tests that it is in fact a valid certificate,
+and then moves it to the correct location.
+
+Used for performing a handshake in combination with [`offer_handshake`](@ref).
+"""
+function perform_handshake(ca_binary, conn)
+    pem = tempname()
+    write(pem, ca_binary)
+    fp = try
+        fingerprint(pem)
+    catch
+        rm(pem, force=true)
+        error("response body is not a valid PEM certificate")
+    end
+
+    @info "Received CA certificate, fingerprint: $fp"
+
+    mkpath(conn.cert_dir)
+    mv(pem, conn.trusted_ca_path, force=true)
+
+    @info "CA certificate automatically trusted and saved. You must manually check that the fingerprint is correct." path = conn.trusted_ca_path
+end
