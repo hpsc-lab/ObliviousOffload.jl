@@ -16,6 +16,7 @@ jobs:
   downgrade-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         version:
           - '1.10'
