@@ -12,11 +12,6 @@ on:
       - 'docs/**'
   workflow_dispatch:
 
-# Run concurrently but dont cancel. One downgrade test might fail, while the other succeeds
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   downgrade-test:
     runs-on: ubuntu-latest
