@@ -12,10 +12,10 @@ on:
       - 'docs/**'
   workflow_dispatch:
 
-# Cancel redundant CI tests automatically
+# Run concurrently but dont cancel. One downgrade test might fail, while the other succeeds
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   downgrade-test:
