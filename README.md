@@ -5,7 +5,7 @@
 [![Coveralls](https://coveralls.io/repos/github/hpsc-lab/ObliviousOffload.jl/badge.svg?branch=main)](https://coveralls.io/github/hpsc-lab/ObliviousOffload.jl?branch=main)
 [![Codecov](https://codecov.io/gh/hpsc-lab/ObliviousOffload.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/hpsc-lab/ObliviousOffload.jl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success.svg)](https://opensource.org/license/mit/)
-[![DOI](https://zenodo.org/badge/1263998847.svg)](https://doi.org/10.5281/zenodo.21699027)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21699027.svg)](https://doi.org/10.5281/zenodo.21699027)
 
 A minimal Julia project demonstrating a simple OpenFHE client/server flow.
 
