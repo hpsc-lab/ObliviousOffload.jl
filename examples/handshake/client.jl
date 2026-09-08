@@ -7,5 +7,5 @@ function run_client(;kwargs...)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    run_client()
+    run_client(;hostname="localhost", port=8080)
 end
