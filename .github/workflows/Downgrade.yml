@@ -21,8 +21,11 @@ jobs:
   downgrade-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        version: ['1']
+        version:
+          - '1.10'
+          - '1.12'
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
