@@ -24,6 +24,22 @@ Outline:
 - The server processes the encrypted payload and sends the encrypted result back.
 - The client decrypts the returned ciphertext with its private key.
 
+## Getting started
+
+### Prerequisites
+If you have not yet installed Julia, please [follow the instructions for your
+operating system](https://julialang.org/downloads/platform/).
+[ObliviousOffload.jl](https://github.com/hpsc-lab/ObliviousOffload.jl) works with Julia v1.10
+and later on Linux, macOS and Windows platforms.
+
+### Installation
+Since ObliviousOffload.jl  is a registered Julia package, you can install it by executing
+the following commands in the Julia REPL:
+```julia
+julia> import Pkg; Pkg.add("ObliviousOffload")
+```
+
+
 ## Usage
 
 ### Configuration
